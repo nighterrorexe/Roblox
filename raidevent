@@ -47,6 +47,9 @@ if selectedPortal and humanoidRootPart then
         task.wait(1) -- Small delay to ensure movement
     end
 
+    -- Wait 2 seconds before firing the remote event
+    task.wait(2)
+
     -- Fire the remote event to create the raid
     local args = {
         [1] = {
