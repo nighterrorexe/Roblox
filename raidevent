@@ -6,77 +6,69 @@ local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 local humanoid = character:WaitForChild("Humanoid")
 
-local Map = Workspace:FindFirstChild("Map")
-local IsInEvent = false -- Default to false
-
 local RaidPortals = Workspace.__THINGS.__INSTANCE_CONTAINER.Active.LuckyEventWorld.INTERACT.RaidPortals
 
--- Check if Map exists; if not, assume we're in event mode.
-if not Map then
-    IsInEvent = true
-    print("Map does not exist in Workspace. IsInEvent set to true.")
-else
-    local folder = Map:FindFirstChild("1 | Spawn")
-    if folder then
-        print("Folder '1|Spawn' exists inside Map!")
-    else
-        print("Folder '1|Spawn' not found in Map.")
-    end
-end
-
--- Helper function to get the raid difficulty from the UI.
+-- Helper: Get the raid difficulty from the UI.
 local function getRaidDifficulty()
     local playerGui = player:WaitForChild("PlayerGui")
     local settingsFrame = playerGui:WaitForChild("LuckyRaidSettings"):WaitForChild("Frame")
     local difficultyObj = settingsFrame:FindFirstChild("⚔️ Raid Lvl")
     if difficultyObj then
-        return difficultyObj.Value  -- Assumes this object has a Value property (e.g., a NumberValue)
+        return difficultyObj.Value  -- e.g. from a NumberValue
     else
         warn("Difficulty object not found! Defaulting to 1")
         return 1
     end
 end
 
--- Function to check if the player already owns a portal.
--- It checks each portal's BillboardGui Title text for "playerName's Raid"
-local function alreadyOwnsPortal()
+-- Function to scan all portals (1 to 10) and return:
+--   • The player's owned portal (if found), or
+--   • The first portal that is free (its Enter part is Color3.fromRGB(65,65,65))
+local function findValidPortal()
+    local freePortal = nil
     for i = 1, 10 do
-        local raidPortal = RaidPortals:FindFirstChild(tostring(i))
-        if raidPortal then
-            local billboard = raidPortal:FindFirstChild("Billboard")
+        local portal = RaidPortals:FindFirstChild(tostring(i))
+        if portal then
+            -- Check if the portal is owned by the player.
+            local billboard = portal:FindFirstChild("Billboard")
             if billboard then
                 local billboardGui = billboard:FindFirstChild("BillboardGui")
                 if billboardGui then
                     local title = billboardGui:FindFirstChild("Title")
-                    if title and title:IsA("TextLabel") then
-                        if title.Text == player.Name .. "'s Raid" then
-                            return true, raidPortal
-                        end
+                    if title and title:IsA("TextLabel") and title.Text == player.Name .. "'s Raid" then
+                        return portal  -- Owned portal found—return immediately.
                     end
+                end
+            end
+
+            -- Otherwise, check if the portal is free.
+            local enterPart = portal:FindFirstChild("Enter")
+            if enterPart and enterPart:IsA("BasePart") and enterPart.Color == Color3.fromRGB(65,65,65) then
+                if not freePortal then
+                    freePortal = portal  -- Store first free portal.
                 end
             end
         end
     end
-    return false, nil
+    return freePortal  -- May be nil if no valid portal exists.
 end
 
--- Function to move the player to a given portal's Pad (or Enter if Pad isn't found),
--- hide the UI, fire the remote event, and then move to the Enter part.
-local function handlePortal(raidPortal)
-    local enterPart = raidPortal:FindFirstChild("Enter")
+-- Function to handle moving the player through the portal process.
+local function handlePortal(portal)
+    local enterPart = portal:FindFirstChild("Enter")
     if not enterPart or not enterPart:IsA("BasePart") then
-        print("Enter part not found or invalid in portal " .. raidPortal.Name)
+        print("Enter part not found or invalid in portal " .. portal.Name)
         return
     end
 
-    -- Use the "Pad" part if available; otherwise, default to the Enter part's position.
-    local padPart = raidPortal:FindFirstChild("Pad") or enterPart
+    -- Use "Pad" if available; otherwise, default to Enter.
+    local padPart = portal:FindFirstChild("Pad") or enterPart
 
-    -- Walk the player to the pad position.
+    -- Walk the player to the Pad.
     humanoid:MoveTo(padPart.Position)
     local reachedPad = humanoid.MoveToFinished:Wait()
     if reachedPad then
-        print("Player reached pad at portal " .. raidPortal.Name)
+        print("Player reached pad at portal " .. portal.Name)
         
         -- Hide the LuckyRaidSettings frame.
         local playerGui = player:WaitForChild("PlayerGui")
@@ -84,78 +76,47 @@ local function handlePortal(raidPortal)
         if luckyRaidSettings and luckyRaidSettings:FindFirstChild("Frame") then
             luckyRaidSettings.Frame.Visible = false
         end
-        
+
         -- Fire the remote event to create the raid.
         local args = {
             [1] = {
                 Difficulty = getRaidDifficulty(),
-                Portal = raidPortal,  -- the portal model
+                Portal = portal,  -- the selected portal model
                 PartyMode = 1
             }
         }
         local remote = ReplicatedStorage:WaitForChild("Network"):WaitForChild("Raids_RequestCreate")
         remote:InvokeServer(unpack(args))
-        print("Raids_RequestCreate remote fired for portal " .. raidPortal.Name)
-        
-        -- Now instruct the player to walk to the Enter part's position.
+        print("Raids_RequestCreate remote fired for portal " .. portal.Name)
+
+        -- Immediately move the player to the Enter part.
         humanoid:MoveTo(enterPart.Position)
         humanoid.MoveToFinished:Connect(function(reached)
             if reached then
-                print("Player reached the Enter part of portal " .. raidPortal.Name)
+                print("Player reached the Enter part of portal " .. portal.Name)
             else
                 print("Player failed to reach the Enter part.")
             end
         end)
         
-        -- Set up a one-time Touched event on the Enter part.
+        -- Optional: One-time Touched event on the Enter part.
         local connection
         connection = enterPart.Touched:Connect(function(hit)
             if hit.Parent == character then
-                print("Player touched Enter part. No further action taken.")
+                print("Player touched Enter part.")
                 connection:Disconnect()
             end
         end)
     else
-        print("Player failed to reach pad at portal " .. raidPortal.Name)
+        print("Player failed to reach pad at portal " .. portal.Name)
     end
 end
 
--- Main function that processes the raid portals.
-local function startRaid()
-    -- First, check if the player already owns a portal.
-    local alreadyOwned, ownedPortal = alreadyOwnsPortal()
-    if alreadyOwned then
-        print("You already own a portal: " .. ownedPortal.Name .. ". Walking to it...")
-        handlePortal(ownedPortal)
-        return  -- Exit after processing the owned portal.
-    end
-
-    -- If the player does not own a portal, look for a free portal.
-    for i = 1, 10 do
-        local raidPortal = RaidPortals:FindFirstChild(tostring(i))
-        if raidPortal then
-            local enterPart = raidPortal:FindFirstChild("Enter")
-            if enterPart and enterPart:IsA("BasePart") then
-                local color = enterPart.Color
-                if color == Color3.fromRGB(65, 65, 65) then
-                    print(raidPortal.Name .. " is free!")
-                    handlePortal(raidPortal)
-                    break
-                elseif color == Color3.fromRGB(171, 72, 72) then
-                    print(raidPortal.Name .. " is not free!")
-                else
-                    print(raidPortal.Name .. " has an unknown color: " .. tostring(color))
-                end
-            else
-                print("Enter part not found or invalid in " .. raidPortal.Name)
-            end
-        else
-            print("RaidPortal " .. i .. " not found!")
-        end
-    end
-end
-
--- Run the raid process only if IsInEvent is true.
-if IsInEvent then
-    startRaid()
+-- Main process: check all portals and choose the one that is either owned or free.
+local validPortal = findValidPortal()
+if validPortal then
+    print("Using portal: " .. validPortal.Name)
+    handlePortal(validPortal)
+else
+    print("No valid portal found!")
 end
