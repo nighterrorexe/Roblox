@@ -1,101 +1,64 @@
 local Players = game:GetService("Players")
-local Workspace = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
-local humanoid = character:WaitForChild("Humanoid")
+local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+local RaidPortals = workspace.__THINGS.__INSTANCE_CONTAINER.Active.LuckyEventWorld.INTERACT.RaidPortals
+local selectedPortal = nil
 
-local RaidPortals = Workspace.__THINGS.__INSTANCE_CONTAINER.Active.LuckyEventWorld.INTERACT.RaidPortals
+-- Get raid level from the UI text
+local raidLevelText = player.PlayerGui.RaidSide.Frame.Top.Title.Text
+local raidLevel = tonumber(string.match(raidLevelText, "%d+")) -- Extract the number
 
--- Look for a portal that the player already owns or the first free one.
-local ownedPortal = nil
-local freePortal = nil
-
+-- Check for an owned portal first
 for i = 1, 10 do
     local portal = RaidPortals:FindFirstChild(tostring(i))
     if portal then
-        -- Check if the portal is owned by the player.
-        local billboard = portal:FindFirstChild("Billboard")
-        if billboard then
-            local billboardGui = billboard:FindFirstChild("BillboardGui")
-            if billboardGui then
-                local title = billboardGui:FindFirstChild("Title")
-                if title and title:IsA("TextLabel") and title.Text == player.Name .. "'s Raid" then
-                    ownedPortal = portal
-                    break  -- Use the owned portal immediately.
-                end
-            end
+        local title = portal.Billboard.BillboardGui.Title.Text
+        if title == player.Name .. "'s Raid" then
+            selectedPortal = portal
+            break
         end
-        -- Otherwise, check if the portal is free (Enter part's color is 65,65,65).
-        local enterPart = portal:FindFirstChild("Enter")
-        if enterPart and enterPart:IsA("BasePart") and enterPart.Color == Color3.fromRGB(65, 65, 65) then
-            if not freePortal then
-                freePortal = portal
+    end
+end
+
+-- If no owned portal is found, find the first free portal
+if not selectedPortal then
+    for i = 1, 10 do
+        local portal = RaidPortals:FindFirstChild(tostring(i))
+        if portal then
+            local enterPart = portal:FindFirstChild("Enter")
+            if enterPart and enterPart.Color == Color3.fromRGB(65, 65, 65) then
+                selectedPortal = portal
+                break
             end
         end
     end
 end
 
-local chosenPortal = ownedPortal or freePortal
+-- If a valid portal is found, proceed
+if selectedPortal and humanoidRootPart then
+    local pad = selectedPortal:FindFirstChild("Pad")
+    local enterPart = selectedPortal:FindFirstChild("Enter")
 
-if not chosenPortal then
-    print("No valid portal found!")
-    return
-end
-
-print("Using portal: " .. chosenPortal.Name)
-
-local enterPart = chosenPortal:FindFirstChild("Enter")
-if not enterPart or not enterPart:IsA("BasePart") then
-    print("Enter part not found in portal " .. chosenPortal.Name)
-    return
-end
-
--- Use the "Pad" part if available; otherwise, default to the Enter part's position.
-local padPart = chosenPortal:FindFirstChild("Pad") or enterPart
-
--- Move the player to the pad.
-humanoid:MoveTo(padPart.Position)
-local reachedPad = humanoid.MoveToFinished:Wait()
-if reachedPad then
-    print("Player reached pad at portal " .. chosenPortal.Name)
-    
-    -- Get the raid level directly from leaderstats.
-    local raidLvl = 1
-    if player:FindFirstChild("leaderstats") and player.leaderstats:FindFirstChild("⚔️ Raid Lvl") then
-        raidLvl = player.leaderstats["⚔️ Raid Lvl"].Value
+    -- Move the player to the Pad first
+    if pad then
+        humanoidRootPart.CFrame = pad.CFrame
+        task.wait(1) -- Small delay to ensure movement
     end
 
+    -- Fire the remote event to create the raid
     local args = {
         [1] = {
-            Difficulty = raidLvl,
-            Portal = chosenPortal,  -- the selected portal model
-            PartyMode = 1
+            ["Difficulty"] = raidLevel,
+            ["Portal"] = selectedPortal,
+            ["PartyMode"] = 1
         }
     }
-    local remote = ReplicatedStorage:WaitForChild("Network"):WaitForChild("Raids_RequestCreate")
-    remote:InvokeServer(unpack(args))
-    print("Raids_RequestCreate remote fired for portal " .. chosenPortal.Name)
+    ReplicatedStorage:WaitForChild("Network"):WaitForChild("Raids_RequestCreate"):InvokeServer(unpack(args))
 
-    -- Immediately move the player to the Enter part.
-    humanoid:MoveTo(enterPart.Position)
-    humanoid.MoveToFinished:Connect(function(reached)
-        if reached then
-            print("Player reached the Enter part of portal " .. chosenPortal.Name)
-        else
-            print("Player failed to reach the Enter part.")
-        end
-    end)
-    
-    -- Optionally, a one-time Touched event on the Enter part.
-    local connection
-    connection = enterPart.Touched:Connect(function(hit)
-        if hit.Parent == character then
-            print("Player touched Enter part.")
-            connection:Disconnect()
-        end
-    end)
-else
-    print("Player failed to reach pad at portal " .. chosenPortal.Name)
+    -- Move the player to the Enter part
+    if enterPart then
+        humanoidRootPart.CFrame = enterPart.CFrame
+    end
 end
