@@ -11,7 +11,7 @@ local IsInEvent = false -- Default to false
 
 local RaidPortals = Workspace.__THINGS.__INSTANCE_CONTAINER.Active.LuckyEventWorld.INTERACT.RaidPortals
 
--- Check if Map exists
+-- Check if Map exists; if not, we're in event mode.
 if not Map then
     IsInEvent = true
     print("Map does not exist in Workspace. IsInEvent set to true.")
@@ -59,15 +59,75 @@ local function alreadyOwnsPortal()
     return false, nil
 end
 
--- Main function that processes the raid portals.
-local function startRaid()
-    -- First, check if the player already owns a portal.
-    local alreadyOwned, ownedPortal = alreadyOwnsPortal()
-    if alreadyOwned then
-        print("You already own a portal: " .. ownedPortal.Name)
-        return  -- Exit if the player already owns a portal.
+-- Function to handle moving the player to a given portal, hiding the UI, firing the remote, and moving to Enter.
+local function handlePortal(raidPortal)
+    local enterPart = raidPortal:FindFirstChild("Enter")
+    if not enterPart or not enterPart:IsA("BasePart") then
+        print("Enter part not found or invalid in portal " .. raidPortal.Name)
+        return
     end
 
+    -- Find a Pad part; if not found, default to Enter's position.
+    local padPart = raidPortal:FindFirstChild("Pad") or enterPart
+
+    -- Walk the player to the pad position.
+    humanoid:MoveTo(padPart.Position)
+    local reachedPad = humanoid.MoveToFinished:Wait()
+    if reachedPad then
+        print("Player reached pad at portal " .. raidPortal.Name)
+        
+        -- Hide the LuckyRaidSettings frame.
+        local playerGui = player:WaitForChild("PlayerGui")
+        local luckyRaidSettings = playerGui:FindFirstChild("LuckyRaidSettings")
+        if luckyRaidSettings and luckyRaidSettings:FindFirstChild("Frame") then
+            luckyRaidSettings.Frame.Visible = false
+        end
+        
+        -- Fire the remote event.
+        local args = {
+            [1] = {
+                Difficulty = getRaidDifficulty(),
+                Portal = raidPortal,  -- the portal model
+                PartyMode = 1
+            }
+        }
+        local remote = ReplicatedStorage:WaitForChild("Network"):WaitForChild("Raids_RequestCreate")
+        remote:InvokeServer(unpack(args))
+        print("Raids_RequestCreate remote fired for portal " .. raidPortal.Name)
+        
+        -- Now instruct the player to walk to the Enter part's position.
+        humanoid:MoveTo(enterPart.Position)
+        humanoid.MoveToFinished:Connect(function(reached)
+            if reached then
+                print("Player reached the Enter part of portal " .. raidPortal.Name)
+            else
+                print("Player failed to reach the Enter part.")
+            end
+        end)
+        
+        -- Set up a one-time Touched event on the Enter part.
+        local connection
+        connection = enterPart.Touched:Connect(function(hit)
+            if hit.Parent == character then
+                print("Player touched Enter part. No further action taken.")
+                connection:Disconnect()
+            end
+        end)
+    else
+        print("Player failed to reach pad at portal " .. raidPortal.Name)
+    end
+end
+
+-- Main function that processes the raid portals.
+local function startRaid()
+    local alreadyOwned, ownedPortal = alreadyOwnsPortal()
+    if alreadyOwned then
+        print("You already own a portal: " .. ownedPortal.Name .. ". Walking to it...")
+        handlePortal(ownedPortal)
+        return  -- Exit after processing the owned portal.
+    end
+
+    -- If no owned portal, search for a free one.
     for i = 1, 10 do
         local raidPortal = RaidPortals:FindFirstChild(tostring(i))
         if raidPortal then
@@ -76,58 +136,8 @@ local function startRaid()
                 local color = enterPart.Color
                 if color == Color3.fromRGB(65, 65, 65) then
                     print(raidPortal.Name .. " is free!")
-                    
-                    -- Try to find a Pad part; if not, default to the Enter part's position.
-                    local padPart = raidPortal:FindFirstChild("Pad") or enterPart
-                    
-                    -- Walk the player to the pad position (non-teleporting movement).
-                    humanoid:MoveTo(padPart.Position)
-                    local reachedPad = humanoid.MoveToFinished:Wait()  -- Yield until movement is complete.
-                    if reachedPad then
-                        print("Player reached pad at portal " .. raidPortal.Name)
-                        
-                        -- Hide the LuckyRaidSettings frame.
-                        local playerGui = player:WaitForChild("PlayerGui")
-                        local luckyRaidSettings = playerGui:FindFirstChild("LuckyRaidSettings")
-                        if luckyRaidSettings and luckyRaidSettings:FindFirstChild("Frame") then
-                            luckyRaidSettings.Frame.Visible = false
-                        end
-                        
-                        -- Fire the remote event once.
-                        local args = {
-                            [1] = {
-                                Difficulty = getRaidDifficulty(),
-                                Portal = raidPortal,  -- the free portal model
-                                PartyMode = 1
-                            }
-                        }
-                        local remote = ReplicatedStorage:WaitForChild("Network"):WaitForChild("Raids_RequestCreate")
-                        remote:InvokeServer(unpack(args))
-                        print("Raids_RequestCreate remote fired for portal " .. raidPortal.Name)
-                        
-                        -- Now instruct the player to walk to the Enter part's position.
-                        humanoid:MoveTo(enterPart.Position)
-                        humanoid.MoveToFinished:Connect(function(reached)
-                            if reached then
-                                print("Player reached the Enter part of portal " .. raidPortal.Name)
-                            else
-                                print("Player failed to reach the Enter part.")
-                            end
-                        end)
-                        
-                        -- Set up a one-time Touched event on the Enter part.
-                        local connection
-                        connection = enterPart.Touched:Connect(function(hit)
-                            if hit.Parent == character then
-                                print("Player touched Enter part. No further action taken.")
-                                connection:Disconnect()
-                            end
-                        end)
-                      
-                        break  -- Exit after processing the first free portal.
-                    else
-                        print("Player failed to reach pad at portal " .. raidPortal.Name)
-                    end
+                    handlePortal(raidPortal)
+                    break
                 elseif color == Color3.fromRGB(171, 72, 72) then
                     print(raidPortal.Name .. " is not free!")
                 else
