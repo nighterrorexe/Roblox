@@ -8,15 +8,19 @@ local humanoid = character:WaitForChild("Humanoid")
 
 local RaidPortals = Workspace.__THINGS.__INSTANCE_CONTAINER.Active.LuckyEventWorld.INTERACT.RaidPortals
 
--- Helper: Get the raid difficulty from the UI.
+-- Helper function to get the raid difficulty from the player's leaderstats.
 local function getRaidDifficulty()
-    local playerGui = player:WaitForChild("PlayerGui")
-    local settingsFrame = playerGui:WaitForChild("LuckyRaidSettings"):WaitForChild("Frame")
-    local difficultyObj = settingsFrame:FindFirstChild("⚔️ Raid Lvl")
-    if difficultyObj then
-        return difficultyObj.Value  -- e.g. from a NumberValue
+    local leaderstats = player:FindFirstChild("leaderstats")
+    if leaderstats then
+        local raidLvl = leaderstats:FindFirstChild("⚔️ Raid Lvl")
+        if raidLvl then
+            return raidLvl.Value
+        else
+            warn("⚔️ Raid Lvl not found in leaderstats! Defaulting to 1")
+            return 1
+        end
     else
-        warn("Difficulty object not found! Defaulting to 1")
+        warn("leaderstats not found! Defaulting difficulty to 1")
         return 1
     end
 end
@@ -45,7 +49,7 @@ local function findValidPortal()
             local enterPart = portal:FindFirstChild("Enter")
             if enterPart and enterPart:IsA("BasePart") and enterPart.Color == Color3.fromRGB(65,65,65) then
                 if not freePortal then
-                    freePortal = portal  -- Store first free portal.
+                    freePortal = portal  -- Save the first free portal.
                 end
             end
         end
@@ -53,7 +57,7 @@ local function findValidPortal()
     return freePortal  -- May be nil if no valid portal exists.
 end
 
--- Function to handle moving the player through the portal process.
+-- Function to handle the portal process.
 local function handlePortal(portal)
     local enterPart = portal:FindFirstChild("Enter")
     if not enterPart or not enterPart:IsA("BasePart") then
@@ -70,12 +74,7 @@ local function handlePortal(portal)
     if reachedPad then
         print("Player reached pad at portal " .. portal.Name)
         
-        -- Hide the LuckyRaidSettings frame.
-        local playerGui = player:WaitForChild("PlayerGui")
-        local luckyRaidSettings = playerGui:FindFirstChild("LuckyRaidSettings")
-        if luckyRaidSettings and luckyRaidSettings:FindFirstChild("Frame") then
-            luckyRaidSettings.Frame.Visible = false
-        end
+        -- NOTE: Leaving the LuckyRaidSettings frame as it is.
 
         -- Fire the remote event to create the raid.
         local args = {
