@@ -11,7 +11,7 @@ local IsInEvent = false -- Default to false
 
 local RaidPortals = Workspace.__THINGS.__INSTANCE_CONTAINER.Active.LuckyEventWorld.INTERACT.RaidPortals
 
--- Check if Map exists; if not, we're in event mode.
+-- Check if Map exists; if not, assume we're in event mode.
 if not Map then
     IsInEvent = true
     print("Map does not exist in Workspace. IsInEvent set to true.")
@@ -30,14 +30,15 @@ local function getRaidDifficulty()
     local settingsFrame = playerGui:WaitForChild("LuckyRaidSettings"):WaitForChild("Frame")
     local difficultyObj = settingsFrame:FindFirstChild("⚔️ Raid Lvl")
     if difficultyObj then
-        return difficultyObj.Value  -- Assumes this object has a Value property (e.g. a NumberValue)
+        return difficultyObj.Value  -- Assumes this object has a Value property (e.g., a NumberValue)
     else
         warn("Difficulty object not found! Defaulting to 1")
         return 1
     end
 end
 
--- Check if the player already owns a portal.
+-- Function to check if the player already owns a portal.
+-- It checks each portal's BillboardGui Title text for "playerName's Raid"
 local function alreadyOwnsPortal()
     for i = 1, 10 do
         local raidPortal = RaidPortals:FindFirstChild(tostring(i))
@@ -59,7 +60,8 @@ local function alreadyOwnsPortal()
     return false, nil
 end
 
--- Function to handle moving the player to a given portal, hiding the UI, firing the remote, and moving to Enter.
+-- Function to move the player to a given portal's Pad (or Enter if Pad isn't found),
+-- hide the UI, fire the remote event, and then move to the Enter part.
 local function handlePortal(raidPortal)
     local enterPart = raidPortal:FindFirstChild("Enter")
     if not enterPart or not enterPart:IsA("BasePart") then
@@ -67,7 +69,7 @@ local function handlePortal(raidPortal)
         return
     end
 
-    -- Find a Pad part; if not found, default to Enter's position.
+    -- Use the "Pad" part if available; otherwise, default to the Enter part's position.
     local padPart = raidPortal:FindFirstChild("Pad") or enterPart
 
     -- Walk the player to the pad position.
@@ -83,7 +85,7 @@ local function handlePortal(raidPortal)
             luckyRaidSettings.Frame.Visible = false
         end
         
-        -- Fire the remote event.
+        -- Fire the remote event to create the raid.
         local args = {
             [1] = {
                 Difficulty = getRaidDifficulty(),
@@ -120,6 +122,7 @@ end
 
 -- Main function that processes the raid portals.
 local function startRaid()
+    -- First, check if the player already owns a portal.
     local alreadyOwned, ownedPortal = alreadyOwnsPortal()
     if alreadyOwned then
         print("You already own a portal: " .. ownedPortal.Name .. ". Walking to it...")
@@ -127,7 +130,7 @@ local function startRaid()
         return  -- Exit after processing the owned portal.
     end
 
-    -- If no owned portal, search for a free one.
+    -- If the player does not own a portal, look for a free portal.
     for i = 1, 10 do
         local raidPortal = RaidPortals:FindFirstChild(tostring(i))
         if raidPortal then
