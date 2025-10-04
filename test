@@ -1,8 +1,8 @@
--- VoidHub Library v2
+-- VoidHub Library v2 - Premium Edition
 local VoidHub = {}
 
 local ValidKeys = {
-    "dev"
+    "12"
 }
 
 local BypassKey = false
@@ -10,6 +10,9 @@ local ExecuteAfterKey = nil
 local SavedKey = nil
 local player = game.Players.LocalPlayer
 local PlayerGui = player:WaitForChild("PlayerGui")
+
+-- TweenService for smooth animations
+local TweenService = game:GetService("TweenService")
 
 if isfile and isfile("VoidHubKey.txt") then
     SavedKey = readfile("VoidHubKey.txt")
@@ -62,70 +65,212 @@ function VoidHub:CreateWindow()
 
     if PlayerGui:FindFirstChild("VoidHubKeyUI") then return end
 
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 20)
+    -- Animation presets
+    local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    local tweenInfoBounce = TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+    local tweenInfoElastic = TweenInfo.new(0.7, Enum.EasingStyle.Elastic, Enum.EasingDirection.Out)
 
-    local uistroke = Instance.new("UIStroke")
-    uistroke.Thickness = 3
-    uistroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    uistroke.Color = Color3.fromRGB(0, 0, 0) -- black stroke
+    local function createGlowEffect(parent)
+        local glow = Instance.new("ImageLabel")
+        glow.Name = "Glow"
+        glow.Size = UDim2.new(1, 20, 1, 20)
+        glow.Position = UDim2.new(0, -10, 0, -10)
+        glow.BackgroundTransparency = 1
+        glow.Image = "rbxassetid://8992231221"
+        glow.ImageColor3 = Color3.fromRGB(255, 105, 180) -- Hot pink glow
+        glow.ScaleType = Enum.ScaleType.Slice
+        glow.SliceCenter = Rect.new(100, 100, 100, 100)
+        glow.SliceScale = 0.02
+        glow.Parent = parent
+        return glow
+    end
+
+    local function createLoadingAnimation(parent)
+        local loadingFrame = Instance.new("Frame")
+        loadingFrame.Name = "LoadingAnimation"
+        loadingFrame.Size = UDim2.new(1, 0, 1, 0)
+        loadingFrame.BackgroundTransparency = 1
+        loadingFrame.Visible = false
+        loadingFrame.Parent = parent
+
+        local circles = {}
+        local colors = {
+            Color3.fromRGB(255, 105, 180), -- Hot Pink
+            Color3.fromRGB(138, 43, 226),  -- Purple
+            Color3.fromRGB(148, 0, 211)    -- Dark Violet
+        }
+
+        for i = 1, 3 do
+            local circle = Instance.new("Frame")
+            circle.Size = UDim2.new(0, 15, 0, 15)
+            circle.AnchorPoint = Vector2.new(0.5, 0.5)
+            circle.Position = UDim2.new(0.5, 0, 0.5, 0)
+            circle.BackgroundColor3 = colors[i]
+            circle.BorderSizePixel = 0
+            circle.Parent = loadingFrame
+
+            local corner = Instance.new("UICorner")
+            corner.CornerRadius = UDim.new(1, 0)
+            corner.Parent = circle
+
+            table.insert(circles, circle)
+        end
+
+        local function animateLoading()
+            for i, circle in ipairs(circles) do
+                local tween = TweenService:Create(
+                    circle,
+                    tweenInfo,
+                    {
+                        Size = UDim2.new(0, 25, 0, 25),
+                        BackgroundTransparency = 0.3
+                    }
+                )
+                tween:Play()
+                tween.Completed:Wait()
+                
+                local tween2 = TweenService:Create(
+                    circle,
+                    tweenInfo,
+                    {
+                        Size = UDim2.new(0, 15, 0, 15),
+                        BackgroundTransparency = 0
+                    }
+                )
+                tween2:Play()
+                wait(0.1)
+            end
+        end
+
+        loadingFrame.Animate = function()
+            while loadingFrame.Visible and loadingFrame.Parent do
+                animateLoading()
+                wait(0.1)
+            end
+        end
+
+        return loadingFrame
+    end
 
     local Gui = Instance.new("ScreenGui")
     Gui.Name = "VoidHubKeyUI"
+    Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     Gui.Parent = PlayerGui
 
+    -- Background blur effect
+    local blur = Instance.new("BlurEffect")
+    blur.Size = 0
+    blur.Parent = game:GetService("Lighting")
+
+    TweenService:Create(blur, tweenInfo, {Size = 10}):Play()
+
+    -- Main container with glossy gradient
     local Main = Instance.new("Frame")
-    Main.Size = UDim2.new(0, 340, 0, 232)
+    Main.Size = UDim2.new(0, 400, 0, 300)
     Main.AnchorPoint = Vector2.new(0.5, 0.5)
     Main.Position = UDim2.new(0.5, 0, 0.5, 0)
-    Main.BackgroundColor3 = Color3.fromRGB(100, 0, 150) -- glossy deep purple
-    Main.BackgroundTransparency = 0.05
+    Main.BackgroundColor3 = Color3.fromRGB(50, 0, 70)
+    Main.BackgroundTransparency = 0.1
+    Main.ClipsDescendants = true
     Main.Parent = Gui
 
-    local cornerframe = corner:Clone()
-    cornerframe.Parent = Main
-    local mainstroke = uistroke:Clone()
-    mainstroke.Parent = Main
+    -- Gradient effect
+    local gradient = Instance.new("UIGradient")
+    gradient.Rotation = 45
+    gradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(147, 112, 219)), -- Medium Purple
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(138, 43, 226)), -- Blue Violet
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(75, 0, 130)) -- Indigo
+    })
+    gradient.Parent = Main
 
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 25)
+    corner.Parent = Main
+
+    local uistroke = Instance.new("UIStroke")
+    uistroke.Thickness = 3
+    uistroke.Color = Color3.fromRGB(255, 105, 180) -- Hot pink border
+    uistroke.Transparency = 0.2
+    uistroke.Parent = Main
+
+    -- Add glow effect to main frame
+    createGlowEffect(Main)
+
+    -- Animate entrance
+    Main.Size = UDim2.new(0, 0, 0, 0)
+    TweenService:Create(Main, tweenInfoElastic, {Size = UDim2.new(0, 400, 0, 300)}):Play()
+
+    -- Title with gradient text
     local Title = Instance.new("TextLabel")
-    Title.Text = "Void Hub Key System"
-    Title.Size = UDim2.new(0, 216, 0, 50)
-    Title.Position = UDim2.new(0.5, -108, 0, 10)
+    Title.Text = "VOID HUB"
+    Title.Size = UDim2.new(0, 300, 0, 60)
+    Title.Position = UDim2.new(0.5, -150, 0, 10)
     Title.TextScaled = true
-    Title.Font = Enum.Font.FredokaOne
-    Title.TextColor3 = Color3.fromRGB(255, 255, 255) -- white text
+    Title.Font = Enum.Font.GothamBlack
+    Title.TextColor3 = Color3.fromRGB(255, 255, 255)
     Title.BackgroundTransparency = 1
+    Title.TextStrokeTransparency = 0.8
+    Title.TextStrokeColor3 = Color3.fromRGB(255, 105, 180)
     Title.Parent = Main
 
-    local titlestroke = uistroke:Clone()
-    titlestroke.Thickness = 2
-    titlestroke.Parent = Title
+    local titleGradient = Instance.new("UIGradient")
+    titleGradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 105, 180)), -- Hot Pink
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(147, 112, 219)) -- Medium Purple
+    })
+    titleGradient.Parent = Title
 
+    -- Subtitle
+    local Subtitle = Instance.new("TextLabel")
+    Subtitle.Text = "KEY SYSTEM"
+    Subtitle.Size = UDim2.new(0, 200, 0, 25)
+    Subtitle.Position = UDim2.new(0.5, -100, 0, 60)
+    Subtitle.TextScaled = true
+    Subtitle.Font = Enum.Font.GothamMedium
+    Subtitle.TextColor3 = Color3.fromRGB(200, 200, 255)
+    Subtitle.BackgroundTransparency = 1
+    Subtitle.Parent = Main
+
+    -- Key input field
     local EnterKey = Instance.new("TextBox")
     EnterKey.Name = "EnterKey"
-    EnterKey.PlaceholderText = "Enter Key Here!"
+    EnterKey.PlaceholderText = "Enter your key here..."
     EnterKey.Text = ""
-    EnterKey.Size = UDim2.new(0, 200, 0, 50)
-    EnterKey.Position = UDim2.new(0.5, -100, 0, 80)
-    EnterKey.BackgroundColor3 = Color3.fromRGB(150, 0, 200) -- lighter glossy purple
+    EnterKey.Size = UDim2.new(0, 300, 0, 50)
+    EnterKey.Position = UDim2.new(0.5, -150, 0, 100)
+    EnterKey.BackgroundColor3 = Color3.fromRGB(30, 0, 45)
+    EnterKey.BackgroundTransparency = 0.2
     EnterKey.TextColor3 = Color3.fromRGB(255, 255, 255)
-    EnterKey.Font = Enum.Font.FredokaOne
+    EnterKey.PlaceholderColor3 = Color3.fromRGB(200, 200, 255)
+    EnterKey.Font = Enum.Font.Gotham
+    EnterKey.TextSize = 16
     EnterKey.Parent = Main
 
-    local cornerEnterKey = corner:Clone()
-    cornerEnterKey.Parent = EnterKey
-    local EnterKeystroke = uistroke:Clone()
-    EnterKeystroke.Parent = EnterKey
+    local enterKeyCorner = Instance.new("UICorner")
+    enterKeyCorner.CornerRadius = UDim.new(0, 12)
+    enterKeyCorner.Parent = EnterKey
 
+    local enterKeyStroke = Instance.new("UIStroke")
+    enterKeyStroke.Thickness = 2
+    enterKeyStroke.Color = Color3.fromRGB(255, 105, 180)
+    enterKeyStroke.Transparency = 0.3
+    enterKeyStroke.Parent = EnterKey
+
+    -- Error message
     local Errortxt = Instance.new("TextLabel")
     Errortxt.Name = "Error"
-    Errortxt.Size = UDim2.new(0, 300, 0, 35)
-    Errortxt.Position = UDim2.new(0.5, -150, 0, 150)
+    Errortxt.Size = UDim2.new(0, 350, 0, 30)
+    Errortxt.Position = UDim2.new(0.5, -175, 0, 160)
     Errortxt.BackgroundTransparency = 1
     Errortxt.TextScaled = true
     Errortxt.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Errortxt.Font = Enum.Font.Gotham
     Errortxt.Visible = false
     Errortxt.Parent = Main
+
+    -- Loading animation for buttons
+    local loadingAnimation = createLoadingAnimation(Main)
 
     local function ShowError(msg, color)
         Errortxt.Visible = true
@@ -133,95 +278,210 @@ function VoidHub:CreateWindow()
         if color then
             Errortxt.TextColor3 = color
         end
+        
+        -- Pulse animation for error
+        local pulseTween = TweenService:Create(
+            Errortxt,
+            TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out, 0, true),
+            {TextTransparency = 0.3}
+        )
+        pulseTween:Play()
+        
         task.wait(3)
+        
+        local fadeOut = TweenService:Create(
+            Errortxt,
+            tweenInfo,
+            {TextTransparency = 1}
+        )
+        fadeOut:Play()
+        fadeOut.Completed:Wait()
         Errortxt.Visible = false
-        Errortxt.Text = ""
+        Errortxt.TextTransparency = 0
     end
 
+    -- Function to create stylish buttons
+    local function createButton(name, text, position, callback)
+        local button = Instance.new("TextButton")
+        button.Name = name
+        button.Text = text
+        button.Size = UDim2.new(0, 140, 0, 45)
+        button.Position = position
+        button.BackgroundColor3 = Color3.fromRGB(75, 0, 130)
+        button.BackgroundTransparency = 0.1
+        button.Font = Enum.Font.GothamBold
+        button.TextColor3 = Color3.fromRGB(255, 255, 255)
+        button.TextSize = 16
+        button.AutoButtonColor = false
+        button.Parent = Main
+
+        local buttonCorner = Instance.new("UICorner")
+        buttonCorner.CornerRadius = UDim.new(0, 15)
+        buttonCorner.Parent = button
+
+        local buttonStroke = Instance.new("UIStroke")
+        buttonStroke.Thickness = 2
+        buttonStroke.Color = Color3.fromRGB(255, 105, 180)
+        buttonStroke.Transparency = 0.2
+        buttonStroke.Parent = button
+
+        local buttonGradient = Instance.new("UIGradient")
+        buttonGradient.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(147, 112, 219)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(138, 43, 226))
+        })
+        buttonGradient.Parent = button
+
+        -- Hover effects
+        button.MouseEnter:Connect(function()
+            TweenService:Create(button, tweenInfo, {
+                BackgroundTransparency = 0,
+                Size = UDim2.new(0, 145, 0, 48)
+            }):Play()
+            TweenService:Create(buttonStroke, tweenInfo, {Transparency = 0}):Play()
+        end)
+
+        button.MouseLeave:Connect(function()
+            TweenService:Create(button, tweenInfo, {
+                BackgroundTransparency = 0.1,
+                Size = UDim2.new(0, 140, 0, 45)
+            }):Play()
+            TweenService:Create(buttonStroke, tweenInfo, {Transparency = 0.2}):Play()
+        end)
+
+        -- Click animation
+        button.MouseButton1Click:Connect(function()
+            TweenService:Create(button, TweenInfo.new(0.1), {
+                BackgroundColor3 = Color3.fromRGB(255, 105, 180),
+                Size = UDim2.new(0, 135, 0, 43)
+            }):Play()
+            
+            task.wait(0.1)
+            
+            TweenService:Create(button, TweenInfo.new(0.1), {
+                BackgroundColor3 = Color3.fromRGB(75, 0, 130),
+                Size = UDim2.new(0, 140, 0, 45)
+            }):Play()
+            
+            callback()
+        end)
+
+        return button
+    end
+
+    -- Close button with special styling
     local closebtn = Instance.new("TextButton")
     closebtn.Name = "Close"
-    closebtn.Text = "X"
+    closebtn.Text = "×"
     closebtn.TextScaled = true
     closebtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    closebtn.Font = Enum.Font.FredokaOne
-    closebtn.Size = UDim2.new(0, 50, 0, 50)
-    closebtn.Position = UDim2.new(0, 298, -0.05, 0)
-    closebtn.BackgroundColor3 = Color3.fromRGB(150, 0, 200)
+    closebtn.Font = Enum.Font.GothamBlack
+    closebtn.Size = UDim2.new(0, 35, 0, 35)
+    closebtn.Position = UDim2.new(1, -45, 0, 10)
+    closebtn.BackgroundColor3 = Color3.fromRGB(220, 20, 60) -- Crimson red
+    closebtn.BorderSizePixel = 0
     closebtn.Parent = Main
 
-    local closebtncorner = corner:Clone()
-    closebtncorner.Parent = closebtn
-    local closebtnstroke = uistroke:Clone()
-    closebtnstroke.Parent = closebtn
+    local closeCorner = Instance.new("UICorner")
+    closeCorner.CornerRadius = UDim.new(1, 0)
+    closeCorner.Parent = closebtn
 
     closebtn.MouseButton1Click:Connect(function()
+        -- Close animation
+        local closeTween = TweenService:Create(Main, tweenInfo, {
+            Size = UDim2.new(0, 0, 0, 0),
+            BackgroundTransparency = 1
+        })
+        
+        local blurTween = TweenService:Create(blur, tweenInfo, {Size = 0})
+        
+        closeTween:Play()
+        blurTween:Play()
+        
+        closeTween.Completed:Wait()
         Gui:Destroy()
-        print("Closed The Ui")
+        blur:Destroy()
     end)
 
-    local Checkbtn = Instance.new("TextButton")
-    Checkbtn.Name = "Check"
-    Checkbtn.Text = "Check Key"
-    Checkbtn.Size = UDim2.new(0, 100, 0, 50)
-    Checkbtn.Position = UDim2.new(0.5, 20, 0, 150)
-    Checkbtn.BackgroundColor3 = Color3.fromRGB(200, 0, 255) -- neon purple/pink
-    Checkbtn.Font = Enum.Font.FredokaOne
-    Checkbtn.TextScaled = true
-    Checkbtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Checkbtn.Parent = Main
-
-    local checkkeycorner = corner:Clone()
-    checkkeycorner.Parent = Checkbtn
-    local checkkeystroke = uistroke:Clone()
-    checkkeystroke.Parent = Checkbtn
-
-    Checkbtn.MouseButton1Click:Connect(function()
-        local key = EnterKey.Text
-        if table.find(ValidKeys, key) then
-            ShowError("✅ Valid Key!", Color3.fromRGB(0, 255, 0))
-            VoidHub:SaveKey(key)
-            Gui:Destroy()
-            if ExecuteAfterKey then
-                VoidHub:Execute(ExecuteAfterKey)
-            end
-        else
-            ShowError("❌ Invalid Key!", Color3.fromRGB(255, 0, 0))
-        end
-    end)
-
-    local Getbtn = Instance.new("TextButton")
-    Getbtn.Name = "Get"
-    Getbtn.Text = "Get Key"
-    Getbtn.Size = UDim2.new(0, 100, 0, 50)
-    Getbtn.Position = UDim2.new(0.5, -120, 0, 150)
-    Getbtn.BackgroundColor3 = Color3.fromRGB(200, 0, 255)
-    Getbtn.Font = Enum.Font.FredokaOne
-    Getbtn.TextScaled = true
-    Getbtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Getbtn.Parent = Main
-
-    local getkeycorner = corner:Clone()
-    getkeycorner.Parent = Getbtn
-    local getkeyuistroke = uistroke:Clone()
-    getkeyuistroke.Parent = Getbtn
-
-    Getbtn.MouseButton1Click:Connect(function()
+    -- Create action buttons
+    local Getbtn = createButton("Get", "GET KEY", UDim2.new(0.5, -150, 0, 200), function()
         local link = "https://workink.net/23KW/olr2h0y6"
         pcall(function()
             setclipboard(link)
         end)
-        ShowError("✅ Link copied to clipboard!", Color3.fromRGB(0, 255, 0))
+        ShowError("✅ Link copied to clipboard!", Color3.fromRGB(0, 255, 127))
+    end)
+
+    local Checkbtn = createButton("Check", "CHECK KEY", UDim2.new(0.5, 10, 0, 200), function()
+        local key = EnterKey.Text
+        
+        -- Show loading animation
+        loadingAnimation.Visible = true
+        spawn(loadingAnimation.Animate)
+        
+        -- Simulate processing delay
+        wait(1)
+        
+        loadingAnimation.Visible = false
+        
+        if table.find(ValidKeys, key) then
+            ShowError("✅ Valid Key! Welcome to Void Hub!", Color3.fromRGB(0, 255, 127))
+            
+            -- Success animation
+            local successTween = TweenService:Create(Main, tweenInfoBounce, {
+                BackgroundColor3 = Color3.fromRGB(0, 100, 0),
+                Size = UDim2.new(0, 420, 0, 320)
+            })
+            successTween:Play()
+            
+            wait(1)
+            
+            VoidHub:SaveKey(key)
+            
+            -- Exit animation
+            local exitTween = TweenService:Create(Main, tweenInfo, {
+                Size = UDim2.new(0, 0, 0, 0),
+                BackgroundTransparency = 1
+            })
+            exitTween:Play()
+            
+            local blurTween = TweenService:Create(blur, tweenInfo, {Size = 0})
+            blurTween:Play()
+            
+            exitTween.Completed:Wait()
+            Gui:Destroy()
+            blur:Destroy()
+            
+            if ExecuteAfterKey then
+                VoidHub:Execute(ExecuteAfterKey)
+            end
+        else
+            ShowError("❌ Invalid Key! Please try again.", Color3.fromRGB(255, 69, 58))
+            
+            -- Shake animation for invalid key
+            local shakeTween = TweenService:Create(Main, TweenInfo.new(0.1, Enum.EasingStyle.Sine, Enum.EasingDirection.Out, 6, true), {
+                Position = UDim2.new(0.5, 10, 0.5, 0)
+            })
+            shakeTween:Play()
+        end
     end)
 
     -- Make draggable (PC + Mobile)
     local UIS = game:GetService("UserInputService")
     local dragging, dragInput, dragStart, startPos
 
+    local function updateInput(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end
+
     Main.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
             dragStart = input.Position
             startPos = Main.Position
+            
             input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
                     dragging = false
