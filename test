@@ -1,9 +1,13 @@
 -- VoidHub Library v2
 local VoidHub = {}
 
-local ValidKeys = { "developer" }
-local BypassKey, ExecuteAfterKey, SavedKey = false, nil, nil
+local ValidKeys = {
+    "dev"
+}
 
+local BypassKey = false
+local ExecuteAfterKey = nil
+local SavedKey = nil
 local player = game.Players.LocalPlayer
 local PlayerGui = player:WaitForChild("PlayerGui")
 
@@ -22,7 +26,7 @@ function VoidHub:Execute(codeOrFunction)
             loadstring(game:HttpGet(codeOrFunction, true))()
         end)
         if not success then
-            warn("VoidHub Execute Error: " .. tostring(err))
+            warn("VoidHub Execute Error: "..tostring(err))
         end
     elseif type(codeOrFunction) == "function" then
         pcall(codeOrFunction)
@@ -56,53 +60,70 @@ function VoidHub:CreateWindow()
         return
     end
 
-    if PlayerGui:FindFirstChild("VoidHubKeyUI") then return end
+    if PlayerGui:FindFirstChild('VoidHubKeyUI') then
+        return
+    end
 
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 12)
+    local corner = Instance.new('UICorner')
+    corner.CornerRadius = UDim.new(0, 20)
 
-    local uistroke = Instance.new("UIStroke")
-    uistroke.Thickness = 2
-    uistroke.Color = Color3.fromRGB(255, 255, 255)
-    uistroke.Transparency = 0.2
+    local uistroke = Instance.new('UIStroke')
+    uistroke.Thickness = 3
+    uistroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    uistroke.Color = Color3.fromRGB(255, 180, 255)
 
-    local Gui = Instance.new("ScreenGui")
-    Gui.Name = "VoidHubKeyUI"
+    local Gui = Instance.new('ScreenGui')
+    Gui.Name = 'VoidHubKeyUI'
     Gui.Parent = PlayerGui
 
-    local Main = Instance.new("Frame")
+    local Main = Instance.new('Frame')
     Main.Size = UDim2.new(0, 340, 0, 232)
     Main.AnchorPoint = Vector2.new(0.5, 0.5)
     Main.Position = UDim2.new(0.5, 0, 0.5, 0)
-    Main.BackgroundColor3 = Color3.fromRGB(40, 0, 60)
+    Main.BackgroundColor3 = Color3.fromRGB(180, 0, 255)
     Main.Parent = Gui
 
-    corner:Clone().Parent = Main
-    uistroke:Clone().Parent = Main
+    local cornerframe = corner:Clone()
+    cornerframe.Parent = Main
+    local mainstroke = uistroke:Clone()
+    mainstroke.Parent = Main
 
-    local Title = Instance.new("TextLabel")
-    Title.Text = "Void Hub Key System"
+    local Title = Instance.new('TextLabel')
+    Title.Text = 'Void Hub Key System'
     Title.Size = UDim2.new(0, 216, 0, 50)
     Title.Position = UDim2.new(0.5, -108, 0, 10)
     Title.TextScaled = true
     Title.Font = Enum.Font.FredokaOne
-    Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Title.TextColor3 = Color3.fromRGB(255, 230, 255)
     Title.BackgroundTransparency = 1
     Title.Parent = Main
 
-    local EnterKey = Instance.new("TextBox")
-    EnterKey.PlaceholderText = "Enter Key Here!"
+    local titlestroke = uistroke:Clone()
+    titlestroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
+    titlestroke.Thickness = 2
+    titlestroke.Color = Color3.fromRGB(255, 120, 255)
+    titlestroke.Parent = Title
+
+    local EnterKey = Instance.new('TextBox')
+    EnterKey.Name = 'EnterKey'
+    EnterKey.PlaceholderText = 'Enter Key Here!'
+    EnterKey.Text = ''
     EnterKey.Size = UDim2.new(0, 200, 0, 50)
     EnterKey.Position = UDim2.new(0.5, -100, 0, 80)
-    EnterKey.BackgroundColor3 = Color3.fromRGB(90, 0, 140)
+    EnterKey.BackgroundColor3 = Color3.fromRGB(200, 0, 255)
     EnterKey.TextColor3 = Color3.fromRGB(255, 255, 255)
     EnterKey.Font = Enum.Font.FredokaOne
-    EnterKey.TextScaled = true
     EnterKey.Parent = Main
-    corner:Clone().Parent = EnterKey
-    uistroke:Clone().Parent = EnterKey
 
-    local Errortxt = Instance.new("TextLabel")
+    local cornerEnterKey = corner:Clone()
+    cornerEnterKey.Parent = EnterKey
+    local EnterKeystroke = uistroke:Clone()
+    EnterKeystroke.Thickness = 2
+    EnterKeystroke.Color = Color3.fromRGB(255, 150, 255)
+    EnterKeystroke.Parent = EnterKey
+
+    local Errortxt = Instance.new('TextLabel')
+    Errortxt.Name = 'Error'
     Errortxt.Size = UDim2.new(0, 300, 0, 35)
     Errortxt.Position = UDim2.new(0.5, -150, 0, 150)
     Errortxt.BackgroundTransparency = 1
@@ -114,84 +135,101 @@ function VoidHub:CreateWindow()
     local function ShowError(msg, color)
         Errortxt.Visible = true
         Errortxt.Text = msg
-        if color then Errortxt.TextColor3 = color end
+        if color then
+            Errortxt.TextColor3 = color
+        end
         task.wait(3)
         Errortxt.Visible = false
-        Errortxt.Text = ""
+        Errortxt.Text = ''
     end
 
-    local closebtn = Instance.new("TextButton")
+    local closebtn = Instance.new('TextButton')
+    closebtn.Name = 'Close'
     closebtn.Text = "X"
-    closebtn.Size = UDim2.new(0, 50, 0, 50)
-    closebtn.Position = UDim2.new(0, 298, -0.05, 0)
-    closebtn.BackgroundColor3 = Color3.fromRGB(255, 0, 100)
+    closebtn.TextScaled = true
     closebtn.TextColor3 = Color3.fromRGB(255, 255, 255)
     closebtn.Font = Enum.Font.FredokaOne
-    closebtn.TextScaled = true
+    closebtn.Size = UDim2.new(0, 50, 0, 50)
+    closebtn.Position = UDim2.new(0, 298, -0.05, 0)
+    closebtn.BackgroundColor3 = Color3.fromRGB(220, 0, 255)
     closebtn.Parent = Main
-    corner:Clone().Parent = closebtn
-    uistroke:Clone().Parent = closebtn
+
+    local closebtncorner = corner:Clone()
+    closebtncorner.Parent = closebtn
+    local closebtnstroke = uistroke:Clone()
+    closebtnstroke.Thickness = 2
+    closebtnstroke.Color = Color3.fromRGB(255, 120, 255)
+    closebtnstroke.Parent = closebtn
 
     closebtn.MouseButton1Click:Connect(function()
         Gui:Destroy()
     end)
 
-    local Checkbtn = Instance.new("TextButton")
-    Checkbtn.Text = "Check Key"
+    local Checkbtn = Instance.new('TextButton')
+    Checkbtn.Name = 'Check'
+    Checkbtn.Text = 'Check Key'
     Checkbtn.Size = UDim2.new(0, 100, 0, 50)
     Checkbtn.Position = UDim2.new(0.5, 20, 0, 150)
-    Checkbtn.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
-    Checkbtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Checkbtn.BackgroundColor3 = Color3.fromRGB(255, 0, 200)
     Checkbtn.Font = Enum.Font.FredokaOne
     Checkbtn.TextScaled = true
+    Checkbtn.TextColor3 = Color3.fromRGB(255, 255, 255)
     Checkbtn.Parent = Main
-    corner:Clone().Parent = Checkbtn
-    uistroke:Clone().Parent = Checkbtn
+
+    local checkkeycorner = corner:Clone()
+    checkkeycorner.Parent = Checkbtn
+    local checkkeystroke = uistroke:Clone()
+    checkkeystroke.Thickness = 2
+    checkkeystroke.Color = Color3.fromRGB(255, 120, 255)
+    checkkeystroke.Parent = Checkbtn
 
     Checkbtn.MouseButton1Click:Connect(function()
         local key = EnterKey.Text
         if table.find(ValidKeys, key) then
-            ShowError("✅ Valid Key!", Color3.fromRGB(0, 255, 0))
+            ShowError('✅ Valid Key!', Color3.fromRGB(0, 255, 0))
             VoidHub:SaveKey(key)
             Gui:Destroy()
             if ExecuteAfterKey then
                 VoidHub:Execute(ExecuteAfterKey)
             end
         else
-            ShowError("❌ Invalid Key!", Color3.fromRGB(255, 0, 0))
+            ShowError('❌ Invalid Key!', Color3.fromRGB(255, 80, 120))
         end
     end)
 
-    local Getbtn = Instance.new("TextButton")
-    Getbtn.Text = "Get Key"
+    local Getbtn = Instance.new('TextButton')
+    Getbtn.Name = 'Get'
+    Getbtn.Text = 'Get Key'
     Getbtn.Size = UDim2.new(0, 100, 0, 50)
     Getbtn.Position = UDim2.new(0.5, -120, 0, 150)
-    Getbtn.BackgroundColor3 = Color3.fromRGB(0, 200, 120)
-    Getbtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Getbtn.BackgroundColor3 = Color3.fromRGB(255, 0, 200)
     Getbtn.Font = Enum.Font.FredokaOne
     Getbtn.TextScaled = true
+    Getbtn.TextColor3 = Color3.fromRGB(255, 255, 255)
     Getbtn.Parent = Main
-    corner:Clone().Parent = Getbtn
-    uistroke:Clone().Parent = Getbtn
+
+    local getkeycorner = corner:Clone()
+    getkeycorner.Parent = Getbtn
+    local getkeyuistroke = uistroke:Clone()
+    getkeyuistroke.Thickness = 2
+    getkeyuistroke.Color = Color3.fromRGB(255, 120, 255)
+    getkeyuistroke.Parent = Getbtn
 
     Getbtn.MouseButton1Click:Connect(function()
-        local link = "https://workink.net/23KW/olr2h0y6"
-        pcall(function() setclipboard(link) end)
-        ShowError("✅ Link copied to clipboard!", Color3.fromRGB(0, 255, 0))
+        local link = 'https://workink.net/23KW/olr2h0y6'
+        pcall(function()
+            setclipboard(link)
+        end)
+        ShowError('✅ Link copied to clipboard!', Color3.fromRGB(0, 255, 0))
     end)
 
-    -- Dragging (works PC + Mobile)
-    local UserInputService = game:GetService("UserInputService")
+    -- Dragging support (PC + Mobile)
+    local UIS = game:GetService("UserInputService")
     local dragging, dragInput, dragStart, startPos
 
     local function update(input)
         local delta = input.Position - dragStart
-        Main.Position = UDim2.new(
-            startPos.X.Scale,
-            startPos.X.Offset + delta.X,
-            startPos.Y.Scale,
-            startPos.Y.Offset + delta.Y
-        )
+        Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
 
     Main.InputBegan:Connect(function(input)
@@ -199,7 +237,6 @@ function VoidHub:CreateWindow()
             dragging = true
             dragStart = input.Position
             startPos = Main.Position
-
             input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
                     dragging = false
@@ -214,7 +251,7 @@ function VoidHub:CreateWindow()
         end
     end)
 
-    UserInputService.InputChanged:Connect(function(input)
+    UIS.InputChanged:Connect(function(input)
         if input == dragInput and dragging then
             update(input)
         end
