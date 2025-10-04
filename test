@@ -1,576 +1,175 @@
--- VoidHub Library v2 - Premium Edition
-local VoidHub = {}
+-- VoidUI Library - Premium UI Library
+local VoidUI = {}
+VoidUI.__index = VoidUI
 
-local ValidKeys = {
-    "system1"
-}
-
-local BypassKey = false
-local ExecuteAfterKey = nil
-local SavedKey = nil
-local player = game.Players.LocalPlayer
-local PlayerGui = player:WaitForChild("PlayerGui")
-
--- TweenService for smooth animations
+-- Services
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 
-if isfile and isfile("VoidHubKey.txt") then
-    SavedKey = readfile("VoidHubKey.txt")
-    if table.find(ValidKeys, SavedKey) then
-        BypassKey = true
-    else
-        SavedKey = nil
-    end
-end
+-- Animation presets
+local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+local tweenInfoBounce = TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+local tweenInfoElastic = TweenInfo.new(0.7, Enum.EasingStyle.Elastic, Enum.EasingDirection.Out)
 
-function VoidHub:Execute(codeOrFunction)
-    if type(codeOrFunction) == "string" then
-        local success, err = pcall(function()
-            loadstring(game:HttpGet(codeOrFunction, true))()
-        end)
-        if not success then
-            warn("VoidHub Execute Error: " .. tostring(err))
-        end
-    elseif type(codeOrFunction) == "function" then
-        pcall(codeOrFunction)
-    end
-end
+-- Color scheme
+VoidUI.Colors = {
+    Primary = Color3.fromRGB(147, 112, 219),    -- Medium Purple
+    Secondary = Color3.fromRGB(138, 43, 226),   -- Blue Violet
+    Accent = Color3.fromRGB(255, 105, 180),     -- Hot Pink
+    Dark = Color3.fromRGB(50, 0, 70),           -- Dark Purple
+    Text = Color3.fromRGB(255, 255, 255),       -- White
+    Success = Color3.fromRGB(0, 255, 127),      -- Green
+    Error = Color3.fromRGB(255, 69, 58)         -- Red
+}
 
-function VoidHub:SaveKey(key)
-    if key then
-        SavedKey = key
-        BypassKey = true
-        if writefile then
-            pcall(function()
-                writefile("VoidHubKey.txt", key)
-            end)
-        end
-    end
-end
-
-function VoidHub:SetExecute(codeOrFunction)
-    ExecuteAfterKey = codeOrFunction
-    if BypassKey then
-        self:Execute(ExecuteAfterKey)
-    end
-end
-
-function VoidHub:CreateWindow()
-    if BypassKey and table.find(ValidKeys, SavedKey) then
-        if ExecuteAfterKey then
-            self:Execute(ExecuteAfterKey)
-        end
-        return
-    end
-
-    if PlayerGui:FindFirstChild("VoidHubKeyUI") then return end
-
-    -- Animation presets
-    local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-    local tweenInfoBounce = TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-    local tweenInfoElastic = TweenInfo.new(0.7, Enum.EasingStyle.Elastic, Enum.EasingDirection.Out)
-
-    local function createGlowEffect(parent)
-        local glow = Instance.new("ImageLabel")
-        glow.Name = "Glow"
-        glow.Size = UDim2.new(1, 20, 1, 20)
-        glow.Position = UDim2.new(0, -10, 0, -10)
-        glow.BackgroundTransparency = 1
-        glow.Image = "rbxassetid://8992231221"
-        glow.ImageColor3 = Color3.fromRGB(255, 105, 180) -- Hot pink glow
-        glow.ScaleType = Enum.ScaleType.Slice
-        glow.SliceCenter = Rect.new(100, 100, 100, 100)
-        glow.SliceScale = 0.02
-        glow.Parent = parent
-        return glow
-    end
-
-    local function createLoadingAnimation(parent)
-        local loadingFrame = Instance.new("Frame")
-        loadingFrame.Name = "LoadingAnimation"
-        loadingFrame.Size = UDim2.new(0, 200, 0, 50)
-        loadingFrame.Position = UDim2.new(0.5, -100, 0.5, -25)
-        loadingFrame.BackgroundTransparency = 1
-        loadingFrame.Visible = false
-        loadingFrame.Parent = parent
-
-        -- Create loading text
-        local loadingText = Instance.new("TextLabel")
-        loadingText.Text = "Verifying Key..."
-        loadingText.Size = UDim2.new(1, 0, 0, 30)
-        loadingText.Position = UDim2.new(0, 0, 0, 0)
-        loadingText.BackgroundTransparency = 1
-        loadingText.TextColor3 = Color3.fromRGB(255, 255, 255)
-        loadingText.Font = Enum.Font.GothamBold
-        loadingText.TextSize = 16
-        loadingText.Parent = loadingFrame
-
-        -- Create dots container
-        local dotsContainer = Instance.new("Frame")
-        dotsContainer.Size = UDim2.new(0, 60, 0, 20)
-        dotsContainer.Position = UDim2.new(0.5, -30, 1, -20)
-        dotsContainer.BackgroundTransparency = 1
-        dotsContainer.Parent = loadingFrame
-
-        -- Create 3 dots
-        local dots = {}
-        for i = 1, 3 do
-            local dot = Instance.new("Frame")
-            dot.Size = UDim2.new(0, 12, 0, 12)
-            dot.Position = UDim2.new(0, (i-1) * 20, 0, 0)
-            dot.BackgroundColor3 = Color3.fromRGB(255, 105, 180)
-            dot.BorderSizePixel = 0
-            dot.Parent = dotsContainer
-
-            local corner = Instance.new("UICorner")
-            corner.CornerRadius = UDim.new(1, 0)
-            corner.Parent = dot
-
-            table.insert(dots, dot)
-        end
-
-        local function startLoadingAnimation()
-            local connections = {}
-            
-            for i, dot in ipairs(dots) do
-                local connection
-                connection = RunService.Heartbeat:Connect(function()
-                    if not loadingFrame.Visible or not loadingFrame.Parent then
-                        connection:Disconnect()
-                        return
-                    end
-                    
-                    local time = tick()
-                    local offset = (i - 1) * 0.3
-                    local scale = 0.5 + math.abs(math.sin((time + offset) * 3)) * 0.5
-                    
-                    dot.Size = UDim2.new(0, 8 + 4 * scale, 0, 8 + 4 * scale)
-                    dot.BackgroundTransparency = 0.3 + (1 - scale) * 0.7
-                    
-                    -- Center the dot after size change
-                    local newSize = 8 + 4 * scale
-                    dot.Position = UDim2.new(0, (i-1) * 20 + (12 - newSize)/2, 0, (12 - newSize)/2)
-                end)
-                table.insert(connections, connection)
-            end
-            
-            -- Return a function to stop the animation
-            return function()
-                for _, connection in ipairs(connections) do
-                    connection:Disconnect()
-                end
-                for _, dot in ipairs(dots) do
-                    dot.Size = UDim2.new(0, 12, 0, 12)
-                    dot.BackgroundTransparency = 0
-                    dot.Position = UDim2.new(0, (i-1) * 20, 0, 0)
-                end
-            end
-        end
-
-        return loadingFrame, startLoadingAnimation
-    end
-
-    local Gui = Instance.new("ScreenGui")
-    Gui.Name = "VoidHubKeyUI"
-    Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    Gui.Parent = PlayerGui
-
-    -- Background blur effect
-    local blur = Instance.new("BlurEffect")
-    blur.Size = 0
-    blur.Parent = game:GetService("Lighting")
-
-    TweenService:Create(blur, tweenInfo, {Size = 10}):Play()
-
-    -- Main container with glossy gradient
-    local Main = Instance.new("Frame")
-    Main.Size = UDim2.new(0, 400, 0, 300)
-    Main.AnchorPoint = Vector2.new(0.5, 0.5)
-    Main.Position = UDim2.new(0.5, 0, 0.5, 0)
-    Main.BackgroundColor3 = Color3.fromRGB(50, 0, 70)
-    Main.BackgroundTransparency = 0.1
-    Main.ClipsDescendants = true
-    Main.Parent = Gui
-
-    -- Gradient effect
-    local gradient = Instance.new("UIGradient")
-    gradient.Rotation = 45
-    gradient.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(147, 112, 219)), -- Medium Purple
-        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(138, 43, 226)), -- Blue Violet
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(75, 0, 130)) -- Indigo
-    })
-    gradient.Parent = Main
-
+-- Utility functions
+local function createCorner(radius)
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 25)
-    corner.Parent = Main
+    corner.CornerRadius = UDim.new(0, radius)
+    return corner
+end
 
-    local uistroke = Instance.new("UIStroke")
-    uistroke.Thickness = 3
-    uistroke.Color = Color3.fromRGB(255, 105, 180) -- Hot pink border
-    uistroke.Transparency = 0.2
-    uistroke.Parent = Main
+local function createStroke(thickness, color, transparency)
+    local stroke = Instance.new("UIStroke")
+    stroke.Thickness = thickness
+    stroke.Color = color or VoidUI.Colors.Accent
+    stroke.Transparency = transparency or 0.2
+    return stroke
+end
 
-    -- Add glow effect to main frame
-    createGlowEffect(Main)
-
-    -- Animate entrance
-    Main.Size = UDim2.new(0, 0, 0, 0)
-    TweenService:Create(Main, tweenInfoElastic, {Size = UDim2.new(0, 400, 0, 300)}):Play()
-
-    -- Title with gradient text
-    local Title = Instance.new("TextLabel")
-    Title.Text = "VOID HUB"
-    Title.Size = UDim2.new(0, 300, 0, 60)
-    Title.Position = UDim2.new(0.5, -150, 0, 10)
-    Title.TextScaled = true
-    Title.Font = Enum.Font.GothamBlack
-    Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Title.BackgroundTransparency = 1
-    Title.TextStrokeTransparency = 0.8
-    Title.TextStrokeColor3 = Color3.fromRGB(255, 105, 180)
-    Title.Parent = Main
-
-    local titleGradient = Instance.new("UIGradient")
-    titleGradient.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 105, 180)), -- Hot Pink
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(147, 112, 219)) -- Medium Purple
+local function createGradient(colorSequence)
+    local gradient = Instance.new("UIGradient")
+    gradient.Color = colorSequence or ColorSequence.new({
+        ColorSequenceKeypoint.new(0, VoidUI.Colors.Primary),
+        ColorSequenceKeypoint.new(1, VoidUI.Colors.Secondary)
     })
-    titleGradient.Parent = Title
+    gradient.Rotation = 45
+    return gradient
+end
 
-    -- Subtitle
-    local Subtitle = Instance.new("TextLabel")
-    Subtitle.Text = "KEY SYSTEM"
-    Subtitle.Size = UDim2.new(0, 200, 0, 25)
-    Subtitle.Position = UDim2.new(0.5, -100, 0, 60)
-    Subtitle.TextScaled = true
-    Subtitle.Font = Enum.Font.GothamMedium
-    Subtitle.TextColor3 = Color3.fromRGB(200, 200, 255)
-    Subtitle.BackgroundTransparency = 1
-    Subtitle.Parent = Main
+local function createGlowEffect(parent)
+    local glow = Instance.new("ImageLabel")
+    glow.Name = "Glow"
+    glow.Size = UDim2.new(1, 20, 1, 20)
+    glow.Position = UDim2.new(0, -10, 0, -10)
+    glow.BackgroundTransparency = 1
+    glow.Image = "rbxassetid://8992231221"
+    glow.ImageColor3 = VoidUI.Colors.Accent
+    glow.ScaleType = Enum.ScaleType.Slice
+    glow.SliceCenter = Rect.new(100, 100, 100, 100)
+    glow.SliceScale = 0.02
+    glow.Parent = parent
+    return glow
+end
 
-    -- Key input field
-    local EnterKey = Instance.new("TextBox")
-    EnterKey.Name = "EnterKey"
-    EnterKey.PlaceholderText = "Enter your key here..."
-    EnterKey.Text = ""
-    EnterKey.Size = UDim2.new(0, 300, 0, 50)
-    EnterKey.Position = UDim2.new(0.5, -150, 0, 100)
-    EnterKey.BackgroundColor3 = Color3.fromRGB(30, 0, 45)
-    EnterKey.BackgroundTransparency = 0.2
-    EnterKey.TextColor3 = Color3.fromRGB(255, 255, 255)
-    EnterKey.PlaceholderColor3 = Color3.fromRGB(200, 200, 255)
-    EnterKey.Font = Enum.Font.Gotham
-    EnterKey.TextSize = 16
-    EnterKey.Parent = Main
-
-    local enterKeyCorner = Instance.new("UICorner")
-    enterKeyCorner.CornerRadius = UDim.new(0, 12)
-    enterKeyCorner.Parent = EnterKey
-
-    local enterKeyStroke = Instance.new("UIStroke")
-    enterKeyStroke.Thickness = 2
-    enterKeyStroke.Color = Color3.fromRGB(255, 105, 180)
-    enterKeyStroke.Transparency = 0.3
-    enterKeyStroke.Parent = EnterKey
-
-    -- Error message
-    local Errortxt = Instance.new("TextLabel")
-    Errortxt.Name = "Error"
-    Errortxt.Size = UDim2.new(0, 350, 0, 30)
-    Errortxt.Position = UDim2.new(0.5, -175, 0, 160)
-    Errortxt.BackgroundTransparency = 1
-    Errortxt.TextScaled = true
-    Errortxt.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Errortxt.Font = Enum.Font.Gotham
-    Errortxt.Visible = false
-    Errortxt.Parent = Main
-
-    -- Loading animation for buttons
-    local loadingAnimation, startLoadingAnimation = createLoadingAnimation(Main)
-    local stopLoadingAnimation = nil
-
-    local function ShowError(msg, color)
-        Errortxt.Visible = true
-        Errortxt.Text = msg
-        if color then
-            Errortxt.TextColor3 = color
-        end
-        
-        -- Pulse animation for error
-        local pulseTween = TweenService:Create(
-            Errortxt,
-            TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out, 0, true),
-            {TextTransparency = 0.3}
-        )
-        pulseTween:Play()
-        
-        task.wait(3)
-        
-        local fadeOut = TweenService:Create(
-            Errortxt,
-            tweenInfo,
-            {TextTransparency = 1}
-        )
-        fadeOut:Play()
-        fadeOut.Completed:Wait()
-        Errortxt.Visible = false
-        Errortxt.TextTransparency = 0
-    end
-
-    -- Close button with special styling
-    local closebtn = Instance.new("TextButton")
-    closebtn.Name = "Close"
-    closebtn.Text = "X"
-    closebtn.TextScaled = true
-    closebtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    closebtn.Font = Enum.Font.GothamBlack
-    closebtn.Size = UDim2.new(0, 35, 0, 35)
-    closebtn.Position = UDim2.new(1, -45, 0, 10)
-    closebtn.BackgroundColor3 = Color3.fromRGB(220, 20, 60) -- Crimson red
-    closebtn.BorderSizePixel = 0
-    closebtn.Parent = Main
-
-    local closeCorner = Instance.new("UICorner")
-    closeCorner.CornerRadius = UDim.new(1, 0)
-    closeCorner.Parent = closebtn
-
-    -- Close button hover effects
-    closebtn.MouseEnter:Connect(function()
-        TweenService:Create(closebtn, tweenInfo, {
-            BackgroundColor3 = Color3.fromRGB(255, 69, 58),
-            Size = UDim2.new(0, 40, 0, 40)
-        }):Play()
+-- Main Window Creation
+function VoidUI:CreateWindow(options)
+    options = options or {}
+    local window = setmetatable({}, VoidUI)
+    
+    window.Name = options.Name or "VoidUI Window"
+    window.Theme = options.Theme or "Dark"
+    window.Size = options.Size or UDim2.new(0, 500, 0, 400)
+    window.Position = options.Position or UDim2.new(0.5, 0, 0.5, 0)
+    
+    -- Create main GUI
+    window.Gui = Instance.new("ScreenGui")
+    window.Gui.Name = "VoidUI_" .. window.Name
+    window.Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    window.Gui.Parent = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+    
+    -- Create main container
+    window.Main = Instance.new("Frame")
+    window.Main.Size = window.Size
+    window.Main.AnchorPoint = Vector2.new(0.5, 0.5)
+    window.Main.Position = window.Position
+    window.Main.BackgroundColor3 = VoidUI.Colors.Dark
+    window.Main.BackgroundTransparency = 0.1
+    window.Main.ClipsDescendants = true
+    window.Main.Parent = window.Gui
+    
+    -- Add styling
+    createCorner(15).Parent = window.Main
+    createStroke(3, VoidUI.Colors.Accent, 0.2).Parent = window.Main
+    createGradient().Parent = window.Main
+    createGlowEffect(window.Main)
+    
+    -- Add title bar
+    window.TitleBar = Instance.new("Frame")
+    window.TitleBar.Size = UDim2.new(1, 0, 0, 40)
+    window.TitleBar.BackgroundTransparency = 1
+    window.TitleBar.Parent = window.Main
+    
+    window.Title = Instance.new("TextLabel")
+    window.Title.Text = window.Name
+    window.Title.Size = UDim2.new(1, -80, 1, 0)
+    window.Title.Position = UDim2.new(0, 10, 0, 0)
+    window.Title.BackgroundTransparency = 1
+    window.Title.TextColor3 = VoidUI.Colors.Text
+    window.Title.Font = Enum.Font.GothamBold
+    window.Title.TextSize = 18
+    window.Title.TextXAlignment = Enum.TextXAlignment.Left
+    window.Title.Parent = window.TitleBar
+    
+    -- Close button
+    window.CloseButton = Instance.new("TextButton")
+    window.CloseButton.Text = "X"
+    window.CloseButton.Size = UDim2.new(0, 30, 0, 30)
+    window.CloseButton.Position = UDim2.new(1, -35, 0, 5)
+    window.CloseButton.BackgroundColor3 = VoidUI.Colors.Error
+    window.CloseButton.TextColor3 = VoidUI.Colors.Text
+    window.CloseButton.Font = Enum.Font.GothamBold
+    window.CloseButton.TextSize = 16
+    window.CloseButton.Parent = window.TitleBar
+    
+    createCorner(15).Parent = window.CloseButton
+    
+    window.CloseButton.MouseButton1Click:Connect(function()
+        window:Destroy()
     end)
-
-    closebtn.MouseLeave:Connect(function()
-        TweenService:Create(closebtn, tweenInfo, {
-            BackgroundColor3 = Color3.fromRGB(220, 20, 60),
-            Size = UDim2.new(0, 35, 0, 35)
-        }):Play()
-    end)
-
-    closebtn.MouseButton1Click:Connect(function()
-        -- Close animation
-        local closeTween = TweenService:Create(Main, tweenInfo, {
-            Size = UDim2.new(0, 0, 0, 0),
-            BackgroundTransparency = 1
-        })
-        
-        local blurTween = TweenService:Create(blur, tweenInfo, {Size = 0})
-        
-        closeTween:Play()
-        blurTween:Play()
-        
-        closeTween.Completed:Wait()
-        Gui:Destroy()
-        blur:Destroy()
-    end)
-
-    -- Get Key Button
-    local Getbtn = Instance.new("TextButton")
-    Getbtn.Name = "Get"
-    Getbtn.Text = "GET KEY"
-    Getbtn.Size = UDim2.new(0, 140, 0, 45)
-    Getbtn.Position = UDim2.new(0.5, -150, 0, 200)
-    Getbtn.BackgroundColor3 = Color3.fromRGB(75, 0, 130)
-    Getbtn.BackgroundTransparency = 0.1
-    Getbtn.Font = Enum.Font.GothamBold
-    Getbtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Getbtn.TextSize = 16
-    Getbtn.AutoButtonColor = false
-    Getbtn.Parent = Main
-
-    local getCorner = Instance.new("UICorner")
-    getCorner.CornerRadius = UDim.new(0, 15)
-    getCorner.Parent = Getbtn
-
-    local getStroke = Instance.new("UIStroke")
-    getStroke.Thickness = 2
-    getStroke.Color = Color3.fromRGB(255, 105, 180)
-    getStroke.Transparency = 0.2
-    getStroke.Parent = Getbtn
-
-    local getGradient = Instance.new("UIGradient")
-    getGradient.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(147, 112, 219)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(138, 43, 226))
-    })
-    getGradient.Parent = Getbtn
-
-    -- Check Key Button
-    local Checkbtn = Instance.new("TextButton")
-    Checkbtn.Name = "Check"
-    Checkbtn.Text = "CHECK KEY"
-    Checkbtn.Size = UDim2.new(0, 140, 0, 45)
-    Checkbtn.Position = UDim2.new(0.5, 10, 0, 200)
-    Checkbtn.BackgroundColor3 = Color3.fromRGB(75, 0, 130)
-    Checkbtn.BackgroundTransparency = 0.1
-    Checkbtn.Font = Enum.Font.GothamBold
-    Checkbtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Checkbtn.TextSize = 16
-    Checkbtn.AutoButtonColor = false
-    Checkbtn.Parent = Main
-
-    local checkCorner = Instance.new("UICorner")
-    checkCorner.CornerRadius = UDim.new(0, 15)
-    checkCorner.Parent = Checkbtn
-
-    local checkStroke = Instance.new("UIStroke")
-    checkStroke.Thickness = 2
-    checkStroke.Color = Color3.fromRGB(255, 105, 180)
-    checkStroke.Transparency = 0.2
-    checkStroke.Parent = Checkbtn
-
-    local checkGradient = Instance.new("UIGradient")
-    checkGradient.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(147, 112, 219)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(138, 43, 226))
-    })
-    checkGradient.Parent = Checkbtn
-
-    -- Button hover effects for Get button
-    Getbtn.MouseEnter:Connect(function()
-        TweenService:Create(Getbtn, tweenInfo, {
-            BackgroundTransparency = 0,
-            Size = UDim2.new(0, 145, 0, 48)
-        }):Play()
-        TweenService:Create(getStroke, tweenInfo, {Transparency = 0}):Play()
-    end)
-
-    Getbtn.MouseLeave:Connect(function()
-        TweenService:Create(Getbtn, tweenInfo, {
-            BackgroundTransparency = 0.1,
-            Size = UDim2.new(0, 140, 0, 45)
-        }):Play()
-        TweenService:Create(getStroke, tweenInfo, {Transparency = 0.2}):Play()
-    end)
-
-    -- Button hover effects for Check button
-    Checkbtn.MouseEnter:Connect(function()
-        TweenService:Create(Checkbtn, tweenInfo, {
-            BackgroundTransparency = 0,
-            Size = UDim2.new(0, 145, 0, 48)
-        }):Play()
-        TweenService:Create(checkStroke, tweenInfo, {Transparency = 0}):Play()
-    end)
-
-    Checkbtn.MouseLeave:Connect(function()
-        TweenService:Create(Checkbtn, tweenInfo, {
-            BackgroundTransparency = 0.1,
-            Size = UDim2.new(0, 140, 0, 45)
-        }):Play()
-        TweenService:Create(checkStroke, tweenInfo, {Transparency = 0.2}):Play()
-    end)
-
-    -- Get Key button functionality
-    Getbtn.MouseButton1Click:Connect(function()
-        -- Click animation
-        TweenService:Create(Getbtn, TweenInfo.new(0.1), {
-            BackgroundColor3 = Color3.fromRGB(255, 105, 180),
-            Size = UDim2.new(0, 135, 0, 43)
-        }):Play()
-        
-        task.wait(0.1)
-        
-        TweenService:Create(Getbtn, TweenInfo.new(0.1), {
-            BackgroundColor3 = Color3.fromRGB(75, 0, 130),
-            Size = UDim2.new(0, 140, 0, 45)
-        }):Play()
-
-        local link = "https://workink.net/23KW/olr2h0y6"
-        pcall(function()
-            setclipboard(link)
-        end)
-        ShowError("✅ Link copied to clipboard!", Color3.fromRGB(0, 255, 127))
-    end)
-
-    -- Check Key button functionality
-    Checkbtn.MouseButton1Click:Connect(function()
-        -- Click animation
-        TweenService:Create(Checkbtn, TweenInfo.new(0.1), {
-            BackgroundColor3 = Color3.fromRGB(255, 105, 180),
-            Size = UDim2.new(0, 135, 0, 43)
-        }):Play()
-        
-        task.wait(0.1)
-        
-        TweenService:Create(Checkbtn, TweenInfo.new(0.1), {
-            BackgroundColor3 = Color3.fromRGB(75, 0, 130),
-            Size = UDim2.new(0, 140, 0, 45)
-        }):Play()
-
-        local key = EnterKey.Text
-        
-        -- Show loading animation
-        loadingAnimation.Visible = true
-        if stopLoadingAnimation then
-            stopLoadingAnimation()
-        end
-        stopLoadingAnimation = startLoadingAnimation()
-        
-        -- Simulate processing delay
-        wait(1.5)
-        
-        loadingAnimation.Visible = false
-        if stopLoadingAnimation then
-            stopLoadingAnimation()
-            stopLoadingAnimation = nil
-        end
-        
-        if table.find(ValidKeys, key) then
-            ShowError("✅ Valid Key! Welcome to Void Hub!", Color3.fromRGB(0, 255, 127))
-            
-            -- Success animation
-            local successTween = TweenService:Create(Main, tweenInfoBounce, {
-                BackgroundColor3 = Color3.fromRGB(0, 100, 0),
-                Size = UDim2.new(0, 420, 0, 320)
-            })
-            successTween:Play()
-            
-            wait(1)
-            
-            VoidHub:SaveKey(key)
-            
-            -- Exit animation
-            local exitTween = TweenService:Create(Main, tweenInfo, {
-                Size = UDim2.new(0, 0, 0, 0),
-                BackgroundTransparency = 1
-            })
-            exitTween:Play()
-            
-            local blurTween = TweenService:Create(blur, tweenInfo, {Size = 0})
-            blurTween:Play()
-            
-            exitTween.Completed:Wait()
-            Gui:Destroy()
-            blur:Destroy()
-            
-            if ExecuteAfterKey then
-                VoidHub:Execute(ExecuteAfterKey)
-            end
-        else
-            ShowError("❌ Invalid Key! Please try again.", Color3.fromRGB(255, 69, 58))
-            
-            -- Shake animation for invalid key
-            local shakeTween = TweenService:Create(Main, TweenInfo.new(0.1, Enum.EasingStyle.Sine, Enum.EasingDirection.Out, 6, true), {
-                Position = UDim2.new(0.5, 10, 0.5, 0)
-            })
-            shakeTween:Play()
-        end
-    end)
-
-    -- Make draggable (PC + Mobile)
-    local UIS = game:GetService("UserInputService")
+    
+    -- Content area
+    window.Content = Instance.new("Frame")
+    window.Content.Size = UDim2.new(1, -20, 1, -60)
+    window.Content.Position = UDim2.new(0, 10, 0, 50)
+    window.Content.BackgroundTransparency = 1
+    window.Content.Parent = window.Main
+    
+    -- Tab container
+    window.Tabs = Instance.new("Frame")
+    window.Tabs.Size = UDim2.new(1, 0, 0, 40)
+    window.Tabs.BackgroundTransparency = 1
+    window.Tabs.Parent = window.Content
+    
+    window.TabContainer = Instance.new("ScrollingFrame")
+    window.TabContainer.Size = UDim2.new(1, 0, 1, 0)
+    window.TabContainer.BackgroundTransparency = 1
+    window.TabContainer.ScrollBarThickness = 0
+    window.TabContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
+    window.TabContainer.Parent = window.Tabs
+    
+    local uiListLayout = Instance.new("UIListLayout")
+    uiListLayout.FillDirection = Enum.FillDirection.Horizontal
+    uiListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    uiListLayout.Padding = UDim.new(0, 5)
+    uiListLayout.Parent = window.TabContainer
+    
+    -- Pages container
+    window.Pages = Instance.new("Frame")
+    window.Pages.Size = UDim2.new(1, 0, 1, -50)
+    window.Pages.Position = UDim2.new(0, 0, 0, 50)
+    window.Pages.BackgroundTransparency = 1
+    window.Pages.ClipsDescendants = true
+    window.Pages.Parent = window.Content
+    
+    -- Make draggable
     local dragging, dragInput, dragStart, startPos
-
-    Main.InputBegan:Connect(function(input)
+    window.TitleBar.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
             dragStart = input.Position
-            startPos = Main.Position
+            startPos = window.Main.Position
             
             input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
@@ -579,20 +178,639 @@ function VoidHub:CreateWindow()
             end)
         end
     end)
-
-    Main.InputChanged:Connect(function(input)
+    
+    window.TitleBar.InputChanged:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
             dragInput = input
         end
     end)
-
-    UIS.InputChanged:Connect(function(input)
+    
+    UserInputService.InputChanged:Connect(function(input)
         if input == dragInput and dragging then
             local delta = input.Position - dragStart
-            Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
+            window.Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
                 startPos.Y.Scale, startPos.Y.Offset + delta.Y)
         end
     end)
+    
+    -- Animation
+    window.Main.Size = UDim2.new(0, 0, 0, 0)
+    TweenService:Create(window.Main, tweenInfoElastic, {Size = window.Size}):Play()
+    
+    window.TabsList = {}
+    window.PagesList = {}
+    window.CurrentTab = nil
+    
+    return window
 end
 
-return VoidHub
+-- Tab Creation
+function VoidUI:CreateTab(name)
+    local tab = {}
+    tab.Name = name
+    
+    -- Create tab button
+    tab.Button = Instance.new("TextButton")
+    tab.Button.Text = name
+    tab.Button.Size = UDim2.new(0, 100, 0, 35)
+    tab.Button.BackgroundColor3 = VoidUI.Colors.Dark
+    tab.Button.BackgroundTransparency = 0.3
+    tab.Button.TextColor3 = VoidUI.Colors.Text
+    tab.Button.Font = Enum.Font.Gotham
+    tab.Button.TextSize = 14
+    tab.Button.AutoButtonColor = false
+    tab.Button.Parent = self.TabContainer
+    
+    createCorner(8).Parent = tab.Button
+    createStroke(2, VoidUI.Colors.Accent, 0.3).Parent = tab.Button
+    
+    -- Create page
+    tab.Page = Instance.new("ScrollingFrame")
+    tab.Page.Size = UDim2.new(1, 0, 1, 0)
+    tab.Page.BackgroundTransparency = 1
+    tab.Page.ScrollBarThickness = 3
+    tab.Page.ScrollBarImageColor3 = VoidUI.Colors.Accent
+    tab.Page.Visible = false
+    tab.Page.Parent = self.Pages
+    
+    local uiListLayout = Instance.new("UIListLayout")
+    uiListLayout.FillDirection = Enum.FillDirection.Vertical
+    uiListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    uiListLayout.Padding = UDim.new(0, 10)
+    uiListLayout.Parent = tab.Page
+    
+    uiListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        tab.Page.CanvasSize = UDim2.new(0, 0, 0, uiListLayout.AbsoluteContentSize.Y + 10)
+    end)
+    
+    -- Tab functionality
+    tab.Button.MouseButton1Click:Connect(function()
+        self:SwitchTab(tab)
+    end)
+    
+    -- Add to lists
+    table.insert(self.TabsList, tab)
+    
+    -- Set as first tab if none selected
+    if not self.CurrentTab then
+        self:SwitchTab(tab)
+    end
+    
+    -- Update tab container size
+    self.TabContainer.CanvasSize = UDim2.new(0, (#self.TabsList * 105) + 5, 0, 0)
+    
+    return tab
+end
+
+function VoidUI:SwitchTab(tab)
+    -- Hide all pages
+    for _, existingTab in pairs(self.TabsList) do
+        existingTab.Page.Visible = false
+        TweenService:Create(existingTab.Button, tweenInfo, {
+            BackgroundTransparency = 0.3,
+            BackgroundColor3 = VoidUI.Colors.Dark
+        }):Play()
+    end
+    
+    -- Show selected page
+    tab.Page.Visible = true
+    TweenService:Create(tab.Button, tweenInfo, {
+        BackgroundTransparency = 0,
+        BackgroundColor3 = VoidUI.Colors.Accent
+    }):Play()
+    
+    self.CurrentTab = tab
+end
+
+-- Section Creation
+function VoidUI:CreateSection(tab, name)
+    local section = {}
+    
+    section.Frame = Instance.new("Frame")
+    section.Frame.Size = UDim2.new(1, 0, 0, 40)
+    section.Frame.BackgroundTransparency = 1
+    section.Frame.LayoutOrder = #tab.Page:GetChildren() + 1
+    section.Frame.Parent = tab.Page
+    
+    section.Title = Instance.new("TextLabel")
+    section.Title.Text = name
+    section.Title.Size = UDim2.new(1, 0, 1, 0)
+    section.Title.BackgroundTransparency = 1
+    section.Title.TextColor3 = VoidUI.Colors.Text
+    section.Title.Font = Enum.Font.GothamBold
+    section.Title.TextSize = 16
+    section.Title.TextXAlignment = Enum.TextXAlignment.Left
+    section.Title.Parent = section.Frame
+    
+    section.Content = Instance.new("Frame")
+    section.Content.Size = UDim2.new(1, -10, 0, 0)
+    section.Content.Position = UDim2.new(0, 10, 1, 0)
+    section.Content.BackgroundTransparency = 1
+    section.Content.Parent = section.Frame
+    
+    local uiListLayout = Instance.new("UIListLayout")
+    uiListLayout.FillDirection = Enum.FillDirection.Vertical
+    uiListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    uiListLayout.Padding = UDim.new(0, 8)
+    uiListLayout.Parent = section.Content
+    
+    uiListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        section.Frame.Size = UDim2.new(1, 0, 0, 40 + uiListLayout.AbsoluteContentSize.Y)
+    end)
+    
+    return section
+end
+
+-- Button Creation
+function VoidUI:CreateButton(section, options)
+    options = options or {}
+    local button = {}
+    button.Name = options.Name or "Button"
+    button.Callback = options.Callback or function() end
+    
+    button.Frame = Instance.new("Frame")
+    button.Frame.Size = UDim2.new(1, 0, 0, 40)
+    button.Frame.BackgroundTransparency = 1
+    button.Frame.LayoutOrder = #section.Content:GetChildren() + 1
+    button.Frame.Parent = section.Content
+    
+    button.Button = Instance.new("TextButton")
+    button.Button.Text = button.Name
+    button.Button.Size = UDim2.new(1, 0, 1, 0)
+    button.Button.BackgroundColor3 = VoidUI.Colors.Dark
+    button.Button.BackgroundTransparency = 0.2
+    button.Button.TextColor3 = VoidUI.Colors.Text
+    button.Button.Font = Enum.Font.Gotham
+    button.Button.TextSize = 14
+    button.Button.AutoButtonColor = false
+    button.Button.Parent = button.Frame
+    
+    createCorner(8).Parent = button.Button
+    createStroke(2, VoidUI.Colors.Accent, 0.3).Parent = button.Button
+    
+    -- Hover effects
+    button.Button.MouseEnter:Connect(function()
+        TweenService:Create(button.Button, tweenInfo, {
+            BackgroundTransparency = 0,
+            Size = UDim2.new(1, 5, 1, 5)
+        }):Play()
+    end)
+    
+    button.Button.MouseLeave:Connect(function()
+        TweenService:Create(button.Button, tweenInfo, {
+            BackgroundTransparency = 0.2,
+            Size = UDim2.new(1, 0, 1, 0)
+        }):Play()
+    end)
+    
+    -- Click functionality
+    button.Button.MouseButton1Click:Connect(function()
+        -- Click animation
+        TweenService:Create(button.Button, TweenInfo.new(0.1), {
+            BackgroundColor3 = VoidUI.Colors.Accent,
+            Size = UDim2.new(1, -5, 1, -5)
+        }):Play()
+        
+        task.wait(0.1)
+        
+        TweenService:Create(button.Button, TweenInfo.new(0.1), {
+            BackgroundColor3 = VoidUI.Colors.Dark,
+            Size = UDim2.new(1, 0, 1, 0)
+        }):Play()
+        
+        button.Callback()
+    end)
+    
+    return button
+end
+
+-- Toggle Creation
+function VoidUI:CreateToggle(section, options)
+    options = options or {}
+    local toggle = {}
+    toggle.Name = options.Name or "Toggle"
+    toggle.Default = options.Default or false
+    toggle.Callback = options.Callback or function() end
+    toggle.Value = toggle.Default
+    
+    toggle.Frame = Instance.new("Frame")
+    toggle.Frame.Size = UDim2.new(1, 0, 0, 30)
+    toggle.Frame.BackgroundTransparency = 1
+    toggle.Frame.LayoutOrder = #section.Content:GetChildren() + 1
+    toggle.Frame.Parent = section.Content
+    
+    toggle.Label = Instance.new("TextLabel")
+    toggle.Label.Text = toggle.Name
+    toggle.Label.Size = UDim2.new(0.7, 0, 1, 0)
+    toggle.Label.BackgroundTransparency = 1
+    toggle.Label.TextColor3 = VoidUI.Colors.Text
+    toggle.Label.Font = Enum.Font.Gotham
+    toggle.Label.TextSize = 14
+    toggle.Label.TextXAlignment = Enum.TextXAlignment.Left
+    toggle.Label.Parent = toggle.Frame
+    
+    toggle.Button = Instance.new("TextButton")
+    toggle.Button.Size = UDim2.new(0, 50, 0, 25)
+    toggle.Button.Position = UDim2.new(1, -55, 0, 2)
+    toggle.Button.BackgroundColor3 = VoidUI.Colors.Dark
+    toggle.Button.BackgroundTransparency = 0.2
+    toggle.Button.Text = ""
+    toggle.Button.AutoButtonColor = false
+    toggle.Button.Parent = toggle.Frame
+    
+    createCorner(12).Parent = toggle.Button
+    createStroke(2, VoidUI.Colors.Accent, 0.3).Parent = toggle.Button
+    
+    toggle.Slider = Instance.new("Frame")
+    toggle.Slider.Size = UDim2.new(0, 20, 0, 20)
+    toggle.Slider.Position = UDim2.new(0, 3, 0, 2)
+    toggle.Slider.BackgroundColor3 = VoidUI.Colors.Accent
+    toggle.Slider.Parent = toggle.Button
+    
+    createCorner(10).Parent = toggle.Slider
+    
+    -- Set initial state
+    toggle:SetValue(toggle.Default)
+    
+    -- Toggle functionality
+    toggle.Button.MouseButton1Click:Connect(function()
+        toggle:SetValue(not toggle.Value)
+        toggle.Callback(toggle.Value)
+    end)
+    
+    function toggle:SetValue(value)
+        self.Value = value
+        if value then
+            TweenService:Create(self.Slider, tweenInfo, {
+                Position = UDim2.new(1, -23, 0, 2),
+                BackgroundColor3 = VoidUI.Colors.Success
+            }):Play()
+            TweenService:Create(self.Button, tweenInfo, {
+                BackgroundColor3 = VoidUI.Colors.Success
+            }):Play()
+        else
+            TweenService:Create(self.Slider, tweenInfo, {
+                Position = UDim2.new(0, 3, 0, 2),
+                BackgroundColor3 = VoidUI.Colors.Accent
+            }):Play()
+            TweenService:Create(self.Button, tweenInfo, {
+                BackgroundColor3 = VoidUI.Colors.Dark
+            }):Play()
+        end
+    end
+    
+    function toggle:GetValue()
+        return self.Value
+    end
+    
+    return toggle
+end
+
+-- Slider Creation
+function VoidUI:CreateSlider(section, options)
+    options = options or {}
+    local slider = {}
+    slider.Name = options.Name or "Slider"
+    slider.Min = options.Min or 0
+    slider.Max = options.Max or 100
+    slider.Default = options.Default or slider.Min
+    slider.Callback = options.Callback or function() end
+    slider.Value = slider.Default
+    
+    slider.Frame = Instance.new("Frame")
+    slider.Frame.Size = UDim2.new(1, 0, 0, 60)
+    slider.Frame.BackgroundTransparency = 1
+    slider.Frame.LayoutOrder = #section.Content:GetChildren() + 1
+    slider.Frame.Parent = section.Content
+    
+    slider.Label = Instance.new("TextLabel")
+    slider.Label.Text = slider.Name
+    slider.Label.Size = UDim2.new(1, 0, 0, 20)
+    slider.Label.BackgroundTransparency = 1
+    slider.Label.TextColor3 = VoidUI.Colors.Text
+    slider.Label.Font = Enum.Font.Gotham
+    slider.Label.TextSize = 14
+    slider.Label.TextXAlignment = Enum.TextXAlignment.Left
+    slider.Label.Parent = slider.Frame
+    
+    slider.ValueLabel = Instance.new("TextLabel")
+    slider.ValueLabel.Text = tostring(slider.Value)
+    slider.ValueLabel.Size = UDim2.new(0, 50, 0, 20)
+    slider.ValueLabel.Position = UDim2.new(1, -50, 0, 0)
+    slider.ValueLabel.BackgroundTransparency = 1
+    slider.ValueLabel.TextColor3 = VoidUI.Colors.Text
+    slider.ValueLabel.Font = Enum.Font.Gotham
+    slider.ValueLabel.TextSize = 14
+    slider.ValueLabel.TextXAlignment = Enum.TextXAlignment.Right
+    slider.ValueLabel.Parent = slider.Frame
+    
+    slider.Track = Instance.new("Frame")
+    slider.Track.Size = UDim2.new(1, 0, 0, 10)
+    slider.Track.Position = UDim2.new(0, 0, 0, 35)
+    slider.Track.BackgroundColor3 = VoidUI.Colors.Dark
+    slider.Track.BackgroundTransparency = 0.3
+    slider.Track.Parent = slider.Frame
+    
+    createCorner(5).Parent = slider.Track
+    createStroke(2, VoidUI.Colors.Accent, 0.3).Parent = slider.Track
+    
+    slider.Fill = Instance.new("Frame")
+    slider.Fill.Size = UDim2.new(0, 0, 1, 0)
+    slider.Fill.BackgroundColor3 = VoidUI.Colors.Accent
+    slider.Fill.Parent = slider.Track
+    
+    createCorner(5).Parent = slider.Fill
+    
+    slider.Button = Instance.new("TextButton")
+    slider.Button.Size = UDim2.new(0, 20, 0, 20)
+    slider.Button.Position = UDim2.new(0, -10, 0, -5)
+    slider.Button.BackgroundColor3 = VoidUI.Colors.Text
+    slider.Button.Text = ""
+    slider.Button.AutoButtonColor = false
+    slider.Button.Parent = slider.Track
+    
+    createCorner(10).Parent = slider.Button
+    createStroke(2, VoidUI.Colors.Accent).Parent = slider.Button
+    
+    -- Set initial value
+    slider:SetValue(slider.Default)
+    
+    -- Slider functionality
+    local dragging = false
+    
+    local function updateSlider(input)
+        local relativeX = (input.Position.X - slider.Track.AbsolutePosition.X) / slider.Track.AbsoluteSize.X
+        local value = math.floor(slider.Min + (slider.Max - slider.Min) * math.clamp(relativeX, 0, 1))
+        slider:SetValue(value)
+        slider.Callback(value)
+    end
+    
+    slider.Button.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+        end
+    end)
+    
+    slider.Button.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            updateSlider(input)
+        end
+    end)
+    
+    slider.Track.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            updateSlider(input)
+        end
+    end)
+    
+    function slider:SetValue(value)
+        self.Value = math.clamp(value, self.Min, self.Max)
+        self.ValueLabel.Text = tostring(self.Value)
+        
+        local percentage = (self.Value - self.Min) / (self.Max - self.Min)
+        self.Fill.Size = UDim2.new(percentage, 0, 1, 0)
+        self.Button.Position = UDim2.new(percentage, -10, 0, -5)
+    end
+    
+    function slider:GetValue()
+        return self.Value
+    end
+    
+    return slider
+end
+
+-- Dropdown Creation
+function VoidUI:CreateDropdown(section, options)
+    options = options or {}
+    local dropdown = {}
+    dropdown.Name = options.Name or "Dropdown"
+    dropdown.Options = options.Options or {}
+    dropdown.Default = options.Default or dropdown.Options[1]
+    dropdown.Callback = options.Callback or function() end
+    dropdown.Value = dropdown.Default
+    dropdown.Open = false
+    
+    dropdown.Frame = Instance.new("Frame")
+    dropdown.Frame.Size = UDim2.new(1, 0, 0, 40)
+    dropdown.Frame.BackgroundTransparency = 1
+    dropdown.Frame.LayoutOrder = #section.Content:GetChildren() + 1
+    dropdown.Frame.ClipsDescendants = true
+    dropdown.Frame.Parent = section.Content
+    
+    dropdown.Button = Instance.new("TextButton")
+    dropdown.Button.Size = UDim2.new(1, 0, 0, 40)
+    dropdown.Button.BackgroundColor3 = VoidUI.Colors.Dark
+    dropdown.Button.BackgroundTransparency = 0.2
+    dropdown.Button.Text = dropdown.Name .. ": " .. tostring(dropdown.Value)
+    dropdown.Button.TextColor3 = VoidUI.Colors.Text
+    dropdown.Button.Font = Enum.Font.Gotham
+    dropdown.Button.TextSize = 14
+    dropdown.Button.AutoButtonColor = false
+    dropdown.Button.Parent = dropdown.Frame
+    
+    createCorner(8).Parent = dropdown.Button
+    createStroke(2, VoidUI.Colors.Accent, 0.3).Parent = dropdown.Button
+    
+    dropdown.Arrow = Instance.new("ImageLabel")
+    dropdown.Arrow.Size = UDim2.new(0, 20, 0, 20)
+    dropdown.Arrow.Position = UDim2.new(1, -25, 0, 10)
+    dropdown.Arrow.BackgroundTransparency = 1
+    dropdown.Arrow.Image = "rbxassetid://6031090990" -- Down arrow icon
+    dropdown.Arrow.ImageColor3 = VoidUI.Colors.Text
+    dropdown.Arrow.Parent = dropdown.Button
+    
+    dropdown.OptionsFrame = Instance.new("Frame")
+    dropdown.OptionsFrame.Size = UDim2.new(1, 0, 0, 0)
+    dropdown.OptionsFrame.Position = UDim2.new(0, 0, 1, 5)
+    dropdown.OptionsFrame.BackgroundColor3 = VoidUI.Colors.Dark
+    dropdown.OptionsFrame.BackgroundTransparency = 0.1
+    dropdown.OptionsFrame.Visible = false
+    dropdown.OptionsFrame.Parent = dropdown.Frame
+    
+    createCorner(8).Parent = dropdown.OptionsFrame
+    createStroke(2, VoidUI.Colors.Accent, 0.3).Parent = dropdown.OptionsFrame
+    
+    local optionsList = Instance.new("UIListLayout")
+    optionsList.FillDirection = Enum.FillDirection.Vertical
+    optionsList.SortOrder = Enum.SortOrder.LayoutOrder
+    optionsList.Parent = dropdown.OptionsFrame
+    
+    -- Create option buttons
+    for i, option in pairs(dropdown.Options) do
+        local optionButton = Instance.new("TextButton")
+        optionButton.Size = UDim2.new(1, 0, 0, 30)
+        optionButton.BackgroundColor3 = VoidUI.Colors.Dark
+        optionButton.BackgroundTransparency = 0.3
+        optionButton.Text = tostring(option)
+        optionButton.TextColor3 = VoidUI.Colors.Text
+        optionButton.Font = Enum.Font.Gotham
+        optionButton.TextSize = 14
+        optionButton.AutoButtonColor = false
+        optionButton.LayoutOrder = i
+        optionButton.Parent = dropdown.OptionsFrame
+        
+        createCorner(5).Parent = optionButton
+        
+        optionButton.MouseButton1Click:Connect(function()
+            dropdown:SetValue(option)
+            dropdown.Callback(option)
+        end)
+        
+        optionButton.MouseEnter:Connect(function()
+            TweenService:Create(optionButton, tweenInfo, {
+                BackgroundTransparency = 0.1
+            }):Play()
+        end)
+        
+        optionButton.MouseLeave:Connect(function()
+            TweenService:Create(optionButton, tweenInfo, {
+                BackgroundTransparency = 0.3
+            }):Play()
+        end)
+    end
+    
+    -- Update options frame size
+    optionsList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        dropdown.OptionsFrame.Size = UDim2.new(1, 0, 0, optionsList.AbsoluteContentSize.Y)
+    end)
+    
+    -- Dropdown functionality
+    dropdown.Button.MouseButton1Click:Connect(function()
+        dropdown:Toggle()
+    end)
+    
+    function dropdown:Toggle()
+        self.Open = not self.Open
+        if self.Open then
+            self.OptionsFrame.Visible = true
+            TweenService:Create(self.Arrow, tweenInfo, {Rotation = 180}):Play()
+            TweenService:Create(self.Frame, tweenInfo, {
+                Size = UDim2.new(1, 0, 0, 40 + self.OptionsFrame.Size.Y.Offset + 5)
+            }):Play()
+        else
+            self.OptionsFrame.Visible = false
+            TweenService:Create(self.Arrow, tweenInfo, {Rotation = 0}):Play()
+            TweenService:Create(self.Frame, tweenInfo, {
+                Size = UDim2.new(1, 0, 0, 40)
+            }):Play()
+        end
+    end
+    
+    function dropdown:SetValue(value)
+        self.Value = value
+        self.Button.Text = self.Name .. ": " .. tostring(value)
+        if self.Open then
+            self:Toggle()
+        end
+    end
+    
+    function dropdown:GetValue()
+        return self.Value
+    end
+    
+    return dropdown
+end
+
+-- Textbox Creation
+function VoidUI:CreateTextbox(section, options)
+    options = options or {}
+    local textbox = {}
+    textbox.Name = options.Name or "Textbox"
+    textbox.Placeholder = options.Placeholder or "Enter text..."
+    textbox.Callback = options.Callback or function() end
+    
+    textbox.Frame = Instance.new("Frame")
+    textbox.Frame.Size = UDim2.new(1, 0, 0, 40)
+    textbox.Frame.BackgroundTransparency = 1
+    textbox.Frame.LayoutOrder = #section.Content:GetChildren() + 1
+    textbox.Frame.Parent = section.Content
+    
+    textbox.Label = Instance.new("TextLabel")
+    textbox.Label.Text = textbox.Name
+    textbox.Label.Size = UDim2.new(0.3, 0, 1, 0)
+    textbox.Label.BackgroundTransparency = 1
+    textbox.Label.TextColor3 = VoidUI.Colors.Text
+    textbox.Label.Font = Enum.Font.Gotham
+    textbox.Label.TextSize = 14
+    textbox.Label.TextXAlignment = Enum.TextXAlignment.Left
+    textbox.Label.Parent = textbox.Frame
+    
+    textbox.Box = Instance.new("TextBox")
+    textbox.Box.Size = UDim2.new(0.7, 0, 1, 0)
+    textbox.Box.Position = UDim2.new(0.3, 0, 0, 0)
+    textbox.Box.BackgroundColor3 = VoidUI.Colors.Dark
+    textbox.Box.BackgroundTransparency = 0.2
+    textbox.Box.TextColor3 = VoidUI.Colors.Text
+    textbox.Box.PlaceholderText = textbox.Placeholder
+    textbox.Box.PlaceholderColor3 = Color3.fromRGB(200, 200, 200)
+    textbox.Box.Font = Enum.Font.Gotham
+    textbox.Box.TextSize = 14
+    textbox.Box.TextXAlignment = Enum.TextXAlignment.Left
+    textbox.Box.Parent = textbox.Frame
+    
+    createCorner(8).Parent = textbox.Box
+    createStroke(2, VoidUI.Colors.Accent, 0.3).Parent = textbox.Box
+    
+    textbox.Box.Focused:Connect(function()
+        TweenService:Create(textbox.Box, tweenInfo, {
+            BackgroundTransparency = 0,
+            Size = UDim2.new(0.7, 5, 1, 5)
+        }):Play()
+    end)
+    
+    textbox.Box.FocusLost:Connect(function()
+        TweenService:Create(textbox.Box, tweenInfo, {
+            BackgroundTransparency = 0.2,
+            Size = UDim2.new(0.7, 0, 1, 0)
+        }):Play()
+        textbox.Callback(textbox.Box.Text)
+    end)
+    
+    function textbox:SetText(text)
+        self.Box.Text = text
+    end
+    
+    function textbox:GetText()
+        return self.Box.Text
+    end
+    
+    return textbox
+end
+
+-- Label Creation
+function VoidUI:CreateLabel(section, text)
+    local label = {}
+    
+    label.Frame = Instance.new("Frame")
+    label.Frame.Size = UDim2.new(1, 0, 0, 25)
+    label.Frame.BackgroundTransparency = 1
+    label.Frame.LayoutOrder = #section.Content:GetChildren() + 1
+    label.Frame.Parent = section.Content
+    
+    label.TextLabel = Instance.new("TextLabel")
+    label.TextLabel.Text = text
+    label.TextLabel.Size = UDim2.new(1, 0, 1, 0)
+    label.TextLabel.BackgroundTransparency = 1
+    label.TextLabel.TextColor3 = VoidUI.Colors.Text
+    label.TextLabel.Font = Enum.Font.Gotham
+    label.TextLabel.TextSize = 14
+    label.TextLabel.TextXAlignment = Enum.TextXAlignment.Left
+    label.TextLabel.Parent = label.Frame
+    
+    return label
+end
+
+-- Destroy window
+function VoidUI:Destroy()
+    if self.Gui then
+        self.Gui:Destroy()
+    end
+end
+
+return VoidUI
