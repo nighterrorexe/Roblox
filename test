@@ -2,7 +2,7 @@
 local VoidHub = {}
 
 local ValidKeys = {
-    "123"
+    "system1"
 }
 
 local BypassKey = false
@@ -411,46 +411,55 @@ function VoidHub:CreateWindow()
     })
     checkGradient.Parent = Checkbtn
 
-    -- Button hover effects function
-    local function setupButtonHoverEffects(button)
-        button.MouseEnter:Connect(function()
-            TweenService:Create(button, tweenInfo, {
-                BackgroundTransparency = 0,
-                Size = UDim2.new(0, 145, 0, 48)
-            }):Play()
-            TweenService:Create(button.Stroke, tweenInfo, {Transparency = 0}):Play()
-        end)
+    -- Button hover effects for Get button
+    Getbtn.MouseEnter:Connect(function()
+        TweenService:Create(Getbtn, tweenInfo, {
+            BackgroundTransparency = 0,
+            Size = UDim2.new(0, 145, 0, 48)
+        }):Play()
+        TweenService:Create(getStroke, tweenInfo, {Transparency = 0}):Play()
+    end)
 
-        button.MouseLeave:Connect(function()
-            TweenService:Create(button, tweenInfo, {
-                BackgroundTransparency = 0.1,
-                Size = UDim2.new(0, 140, 0, 45)
-            }):Play()
-            TweenService:Create(button.Stroke, tweenInfo, {Transparency = 0.2}):Play()
-        end)
+    Getbtn.MouseLeave:Connect(function()
+        TweenService:Create(Getbtn, tweenInfo, {
+            BackgroundTransparency = 0.1,
+            Size = UDim2.new(0, 140, 0, 45)
+        }):Play()
+        TweenService:Create(getStroke, tweenInfo, {Transparency = 0.2}):Play()
+    end)
 
-        -- Click animation
-        button.MouseButton1Click:Connect(function()
-            TweenService:Create(button, TweenInfo.new(0.1), {
-                BackgroundColor3 = Color3.fromRGB(255, 105, 180),
-                Size = UDim2.new(0, 135, 0, 43)
-            }):Play()
-            
-            task.wait(0.1)
-            
-            TweenService:Create(button, TweenInfo.new(0.1), {
-                BackgroundColor3 = Color3.fromRGB(75, 0, 130),
-                Size = UDim2.new(0, 140, 0, 45)
-            }):Play()
-        end)
-    end
+    -- Button hover effects for Check button
+    Checkbtn.MouseEnter:Connect(function()
+        TweenService:Create(Checkbtn, tweenInfo, {
+            BackgroundTransparency = 0,
+            Size = UDim2.new(0, 145, 0, 48)
+        }):Play()
+        TweenService:Create(checkStroke, tweenInfo, {Transparency = 0}):Play()
+    end)
 
-    -- Apply hover effects to buttons
-    setupButtonHoverEffects(Getbtn)
-    setupButtonHoverEffects(Checkbtn)
+    Checkbtn.MouseLeave:Connect(function()
+        TweenService:Create(Checkbtn, tweenInfo, {
+            BackgroundTransparency = 0.1,
+            Size = UDim2.new(0, 140, 0, 45)
+        }):Play()
+        TweenService:Create(checkStroke, tweenInfo, {Transparency = 0.2}):Play()
+    end)
 
     -- Get Key button functionality
     Getbtn.MouseButton1Click:Connect(function()
+        -- Click animation
+        TweenService:Create(Getbtn, TweenInfo.new(0.1), {
+            BackgroundColor3 = Color3.fromRGB(255, 105, 180),
+            Size = UDim2.new(0, 135, 0, 43)
+        }):Play()
+        
+        task.wait(0.1)
+        
+        TweenService:Create(Getbtn, TweenInfo.new(0.1), {
+            BackgroundColor3 = Color3.fromRGB(75, 0, 130),
+            Size = UDim2.new(0, 140, 0, 45)
+        }):Play()
+
         local link = "https://workink.net/23KW/olr2h0y6"
         pcall(function()
             setclipboard(link)
@@ -460,6 +469,19 @@ function VoidHub:CreateWindow()
 
     -- Check Key button functionality
     Checkbtn.MouseButton1Click:Connect(function()
+        -- Click animation
+        TweenService:Create(Checkbtn, TweenInfo.new(0.1), {
+            BackgroundColor3 = Color3.fromRGB(255, 105, 180),
+            Size = UDim2.new(0, 135, 0, 43)
+        }):Play()
+        
+        task.wait(0.1)
+        
+        TweenService:Create(Checkbtn, TweenInfo.new(0.1), {
+            BackgroundColor3 = Color3.fromRGB(75, 0, 130),
+            Size = UDim2.new(0, 140, 0, 45)
+        }):Play()
+
         local key = EnterKey.Text
         
         -- Show loading animation
@@ -516,12 +538,6 @@ function VoidHub:CreateWindow()
     -- Make draggable (PC + Mobile)
     local UIS = game:GetService("UserInputService")
     local dragging, dragInput, dragStart, startPos
-
-    local function updateInput(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-            dragInput = input
-        end
-    end
 
     Main.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
