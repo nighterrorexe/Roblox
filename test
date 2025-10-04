@@ -2,7 +2,7 @@
 local VoidHub = {}
 
 local ValidKeys = {
-    "AccessHubForKeySystem1"
+    "2"
 }
 
 local BypassKey = false
