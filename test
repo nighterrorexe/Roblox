@@ -12,15 +12,17 @@ local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection
 local tweenInfoBounce = TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 local tweenInfoElastic = TweenInfo.new(0.7, Enum.EasingStyle.Elastic, Enum.EasingDirection.Out)
 
--- Color scheme
+-- New Color scheme - Modern dark theme with accent colors
 VoidUI.Colors = {
-    Primary = Color3.fromRGB(147, 112, 219),    -- Medium Purple
-    Secondary = Color3.fromRGB(138, 43, 226),   -- Blue Violet
-    Accent = Color3.fromRGB(255, 105, 180),     -- Hot Pink
-    Dark = Color3.fromRGB(50, 0, 70),           -- Dark Purple
-    Text = Color3.fromRGB(255, 255, 255),       -- White
-    Success = Color3.fromRGB(0, 255, 127),      -- Green
-    Error = Color3.fromRGB(255, 69, 58)         -- Red
+    Background = Color3.fromRGB(20, 20, 30),
+    Secondary = Color3.fromRGB(30, 30, 45),
+    Accent = Color3.fromRGB(0, 150, 255),        -- Blue accent
+    SecondaryAccent = Color3.fromRGB(255, 105, 180), -- Pink for highlights
+    Text = Color3.fromRGB(240, 240, 240),
+    SubText = Color3.fromRGB(180, 180, 200),
+    Success = Color3.fromRGB(0, 255, 127),
+    Error = Color3.fromRGB(255, 85, 85),
+    Warning = Color3.fromRGB(255, 170, 0)
 }
 
 -- Utility functions
@@ -34,33 +36,19 @@ local function createStroke(thickness, color, transparency)
     local stroke = Instance.new("UIStroke")
     stroke.Thickness = thickness
     stroke.Color = color or VoidUI.Colors.Accent
-    stroke.Transparency = transparency or 0.2
+    stroke.Transparency = transparency or 0.5
+    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     return stroke
 end
 
-local function createGradient(colorSequence)
+local function createGradient(color1, color2)
     local gradient = Instance.new("UIGradient")
-    gradient.Color = colorSequence or ColorSequence.new({
-        ColorSequenceKeypoint.new(0, VoidUI.Colors.Primary),
-        ColorSequenceKeypoint.new(1, VoidUI.Colors.Secondary)
+    gradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, color1 or VoidUI.Colors.Accent),
+        ColorSequenceKeypoint.new(1, color2 or VoidUI.Colors.SecondaryAccent)
     })
-    gradient.Rotation = 45
+    gradient.Rotation = 90
     return gradient
-end
-
-local function createGlowEffect(parent)
-    local glow = Instance.new("ImageLabel")
-    glow.Name = "Glow"
-    glow.Size = UDim2.new(1, 20, 1, 20)
-    glow.Position = UDim2.new(0, -10, 0, -10)
-    glow.BackgroundTransparency = 1
-    glow.Image = "rbxassetid://8992231221"
-    glow.ImageColor3 = VoidUI.Colors.Accent
-    glow.ScaleType = Enum.ScaleType.Slice
-    glow.SliceCenter = Rect.new(100, 100, 100, 100)
-    glow.SliceScale = 0.02
-    glow.Parent = parent
-    return glow
 end
 
 -- Main Window Creation
@@ -69,8 +57,7 @@ function VoidUI:CreateWindow(options)
     local window = setmetatable({}, VoidUI)
     
     window.Name = options.Name or "VoidUI Window"
-    window.Theme = options.Theme or "Dark"
-    window.Size = options.Size or UDim2.new(0, 500, 0, 400)
+    window.Size = options.Size or UDim2.new(0, 600, 0, 450)
     window.Position = options.Position or UDim2.new(0.5, 0, 0.5, 0)
     
     -- Create main GUI
@@ -84,81 +71,84 @@ function VoidUI:CreateWindow(options)
     window.Main.Size = window.Size
     window.Main.AnchorPoint = Vector2.new(0.5, 0.5)
     window.Main.Position = window.Position
-    window.Main.BackgroundColor3 = VoidUI.Colors.Dark
-    window.Main.BackgroundTransparency = 0.1
+    window.Main.BackgroundColor3 = VoidUI.Colors.Background
     window.Main.ClipsDescendants = true
     window.Main.Parent = window.Gui
     
     -- Add styling
-    createCorner(15).Parent = window.Main
-    createStroke(3, VoidUI.Colors.Accent, 0.2).Parent = window.Main
-    createGradient().Parent = window.Main
-    createGlowEffect(window.Main)
+    createCorner(12).Parent = window.Main
+    createStroke(2, VoidUI.Colors.Accent, 0.3).Parent = window.Main
     
     -- Add title bar
     window.TitleBar = Instance.new("Frame")
-    window.TitleBar.Size = UDim2.new(1, 0, 0, 40)
-    window.TitleBar.BackgroundTransparency = 1
+    window.TitleBar.Size = UDim2.new(1, 0, 0, 35)
+    window.TitleBar.BackgroundColor3 = VoidUI.Colors.Secondary
     window.TitleBar.Parent = window.Main
+    
+    createCorner(12, 12, 0, 0).Parent = window.TitleBar
     
     window.Title = Instance.new("TextLabel")
     window.Title.Text = window.Name
     window.Title.Size = UDim2.new(1, -80, 1, 0)
-    window.Title.Position = UDim2.new(0, 10, 0, 0)
+    window.Title.Position = UDim2.new(0, 15, 0, 0)
     window.Title.BackgroundTransparency = 1
     window.Title.TextColor3 = VoidUI.Colors.Text
     window.Title.Font = Enum.Font.GothamBold
-    window.Title.TextSize = 18
+    window.Title.TextSize = 16
     window.Title.TextXAlignment = Enum.TextXAlignment.Left
     window.Title.Parent = window.TitleBar
     
     -- Close button
     window.CloseButton = Instance.new("TextButton")
-    window.CloseButton.Text = "X"
-    window.CloseButton.Size = UDim2.new(0, 30, 0, 30)
-    window.CloseButton.Position = UDim2.new(1, -35, 0, 5)
+    window.CloseButton.Text = "×"
+    window.CloseButton.Size = UDim2.new(0, 25, 0, 25)
+    window.CloseButton.Position = UDim2.new(1, -30, 0, 5)
     window.CloseButton.BackgroundColor3 = VoidUI.Colors.Error
     window.CloseButton.TextColor3 = VoidUI.Colors.Text
     window.CloseButton.Font = Enum.Font.GothamBold
-    window.CloseButton.TextSize = 16
+    window.CloseButton.TextSize = 18
     window.CloseButton.Parent = window.TitleBar
     
-    createCorner(15).Parent = window.CloseButton
+    createCorner(20).Parent = window.CloseButton
     
     window.CloseButton.MouseButton1Click:Connect(function()
         window:Destroy()
     end)
     
-    -- Content area
-    window.Content = Instance.new("Frame")
-    window.Content.Size = UDim2.new(1, -20, 1, -60)
-    window.Content.Position = UDim2.new(0, 10, 0, 50)
-    window.Content.BackgroundTransparency = 1
-    window.Content.Parent = window.Main
+    -- Sidebar for tabs
+    window.Sidebar = Instance.new("Frame")
+    window.Sidebar.Size = UDim2.new(0, 120, 1, -35)
+    window.Sidebar.Position = UDim2.new(0, 0, 0, 35)
+    window.Sidebar.BackgroundColor3 = VoidUI.Colors.Secondary
+    window.Sidebar.Parent = window.Main
     
-    -- Tab container
-    window.Tabs = Instance.new("Frame")
-    window.Tabs.Size = UDim2.new(1, 0, 0, 40)
-    window.Tabs.BackgroundTransparency = 1
-    window.Tabs.Parent = window.Content
+    createCorner(0, 0, 0, 12).Parent = window.Sidebar
     
+    -- Tab container in sidebar
     window.TabContainer = Instance.new("ScrollingFrame")
     window.TabContainer.Size = UDim2.new(1, 0, 1, 0)
     window.TabContainer.BackgroundTransparency = 1
     window.TabContainer.ScrollBarThickness = 0
     window.TabContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
-    window.TabContainer.Parent = window.Tabs
+    window.TabContainer.Parent = window.Sidebar
     
     local uiListLayout = Instance.new("UIListLayout")
-    uiListLayout.FillDirection = Enum.FillDirection.Horizontal
+    uiListLayout.FillDirection = Enum.FillDirection.Vertical
     uiListLayout.SortOrder = Enum.SortOrder.LayoutOrder
     uiListLayout.Padding = UDim.new(0, 5)
     uiListLayout.Parent = window.TabContainer
     
+    -- Content area
+    window.Content = Instance.new("Frame")
+    window.Content.Size = UDim2.new(1, -120, 1, -35)
+    window.Content.Position = UDim2.new(0, 120, 0, 35)
+    window.Content.BackgroundTransparency = 1
+    window.Content.Parent = window.Main
+    
     -- Pages container
     window.Pages = Instance.new("Frame")
-    window.Pages.Size = UDim2.new(1, 0, 1, -50)
-    window.Pages.Position = UDim2.new(0, 0, 0, 50)
+    window.Pages.Size = UDim2.new(1, -20, 1, -20)
+    window.Pages.Position = UDim2.new(0, 10, 0, 10)
     window.Pages.BackgroundTransparency = 1
     window.Pages.ClipsDescendants = true
     window.Pages.Parent = window.Content
@@ -166,7 +156,7 @@ function VoidUI:CreateWindow(options)
     -- Make draggable
     local dragging, dragInput, dragStart, startPos
     window.TitleBar.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = true
             dragStart = input.Position
             startPos = window.Main.Position
@@ -180,7 +170,7 @@ function VoidUI:CreateWindow(options)
     end)
     
     window.TitleBar.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
             dragInput = input
         end
     end)
@@ -198,31 +188,31 @@ function VoidUI:CreateWindow(options)
     TweenService:Create(window.Main, tweenInfoElastic, {Size = window.Size}):Play()
     
     window.TabsList = {}
-    window.PagesList = {}
     window.CurrentTab = nil
     
     return window
 end
 
 -- Tab Creation
-function VoidUI:CreateTab(name)
+function VoidUI:CreateTab(name, icon)
     local tab = {}
     tab.Name = name
     
     -- Create tab button
     tab.Button = Instance.new("TextButton")
-    tab.Button.Text = name
-    tab.Button.Size = UDim2.new(0, 100, 0, 35)
-    tab.Button.BackgroundColor3 = VoidUI.Colors.Dark
-    tab.Button.BackgroundTransparency = 0.3
-    tab.Button.TextColor3 = VoidUI.Colors.Text
+    tab.Button.Text = "  " .. name
+    tab.Button.Size = UDim2.new(1, -10, 0, 40)
+    tab.Button.Position = UDim2.new(0, 5, 0, (#self.TabsList * 45) + 5)
+    tab.Button.BackgroundColor3 = VoidUI.Colors.Secondary
+    tab.Button.BackgroundTransparency = 0.5
+    tab.Button.TextColor3 = VoidUI.Colors.SubText
     tab.Button.Font = Enum.Font.Gotham
     tab.Button.TextSize = 14
+    tab.Button.TextXAlignment = Enum.TextXAlignment.Left
     tab.Button.AutoButtonColor = false
     tab.Button.Parent = self.TabContainer
     
     createCorner(8).Parent = tab.Button
-    createStroke(2, VoidUI.Colors.Accent, 0.3).Parent = tab.Button
     
     -- Create page
     tab.Page = Instance.new("ScrollingFrame")
@@ -230,17 +220,18 @@ function VoidUI:CreateTab(name)
     tab.Page.BackgroundTransparency = 1
     tab.Page.ScrollBarThickness = 3
     tab.Page.ScrollBarImageColor3 = VoidUI.Colors.Accent
+    tab.Page.ScrollBarImageTransparency = 0.7
     tab.Page.Visible = false
     tab.Page.Parent = self.Pages
     
     local uiListLayout = Instance.new("UIListLayout")
     uiListLayout.FillDirection = Enum.FillDirection.Vertical
     uiListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    uiListLayout.Padding = UDim.new(0, 10)
+    uiListLayout.Padding = UDim.new(0, 15)
     uiListLayout.Parent = tab.Page
     
     uiListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-        tab.Page.CanvasSize = UDim2.new(0, 0, 0, uiListLayout.AbsoluteContentSize.Y + 10)
+        tab.Page.CanvasSize = UDim2.new(0, 0, 0, uiListLayout.AbsoluteContentSize.Y + 20)
     end)
     
     -- Tab functionality
@@ -257,7 +248,7 @@ function VoidUI:CreateTab(name)
     end
     
     -- Update tab container size
-    self.TabContainer.CanvasSize = UDim2.new(0, (#self.TabsList * 105) + 5, 0, 0)
+    self.TabContainer.CanvasSize = UDim2.new(0, 0, 0, (#self.TabsList * 45) + 10)
     
     return tab
 end
@@ -267,16 +258,18 @@ function VoidUI:SwitchTab(tab)
     for _, existingTab in pairs(self.TabsList) do
         existingTab.Page.Visible = false
         TweenService:Create(existingTab.Button, tweenInfo, {
-            BackgroundTransparency = 0.3,
-            BackgroundColor3 = VoidUI.Colors.Dark
+            BackgroundColor3 = VoidUI.Colors.Secondary,
+            TextColor3 = VoidUI.Colors.SubText,
+            BackgroundTransparency = 0.5
         }):Play()
     end
     
     -- Show selected page
     tab.Page.Visible = true
     TweenService:Create(tab.Button, tweenInfo, {
-        BackgroundTransparency = 0,
-        BackgroundColor3 = VoidUI.Colors.Accent
+        BackgroundColor3 = VoidUI.Colors.Accent,
+        TextColor3 = VoidUI.Colors.Text,
+        BackgroundTransparency = 0
     }):Play()
     
     self.CurrentTab = tab
@@ -288,13 +281,18 @@ function VoidUI:CreateSection(tab, name)
     
     section.Frame = Instance.new("Frame")
     section.Frame.Size = UDim2.new(1, 0, 0, 40)
-    section.Frame.BackgroundTransparency = 1
-    section.Frame.LayoutOrder = #tab.Page:GetChildren() + 1
+    section.Frame.BackgroundColor3 = VoidUI.Colors.Secondary
+    section.Frame.BackgroundTransparency = 0.3
+    section.Frame.LayoutOrder = #tab.Page:GetChildren()
     section.Frame.Parent = tab.Page
+    
+    createCorner(8).Parent = section.Frame
+    createStroke(1, VoidUI.Colors.Accent, 0.5).Parent = section.Frame
     
     section.Title = Instance.new("TextLabel")
     section.Title.Text = name
-    section.Title.Size = UDim2.new(1, 0, 1, 0)
+    section.Title.Size = UDim2.new(1, -20, 1, 0)
+    section.Title.Position = UDim2.new(0, 15, 0, 0)
     section.Title.BackgroundTransparency = 1
     section.Title.TextColor3 = VoidUI.Colors.Text
     section.Title.Font = Enum.Font.GothamBold
@@ -303,8 +301,8 @@ function VoidUI:CreateSection(tab, name)
     section.Title.Parent = section.Frame
     
     section.Content = Instance.new("Frame")
-    section.Content.Size = UDim2.new(1, -10, 0, 0)
-    section.Content.Position = UDim2.new(0, 10, 1, 0)
+    section.Content.Size = UDim2.new(1, -20, 0, 0)
+    section.Content.Position = UDim2.new(0, 10, 1, 10)
     section.Content.BackgroundTransparency = 1
     section.Content.Parent = section.Frame
     
@@ -315,7 +313,7 @@ function VoidUI:CreateSection(tab, name)
     uiListLayout.Parent = section.Content
     
     uiListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-        section.Frame.Size = UDim2.new(1, 0, 0, 40 + uiListLayout.AbsoluteContentSize.Y)
+        section.Frame.Size = UDim2.new(1, 0, 0, 50 + uiListLayout.AbsoluteContentSize.Y)
     end)
     
     return section
@@ -329,15 +327,15 @@ function VoidUI:CreateButton(section, options)
     button.Callback = options.Callback or function() end
     
     button.Frame = Instance.new("Frame")
-    button.Frame.Size = UDim2.new(1, 0, 0, 40)
+    button.Frame.Size = UDim2.new(1, 0, 0, 35)
     button.Frame.BackgroundTransparency = 1
-    button.Frame.LayoutOrder = #section.Content:GetChildren() + 1
+    button.Frame.LayoutOrder = #section.Content:GetChildren()
     button.Frame.Parent = section.Content
     
     button.Button = Instance.new("TextButton")
     button.Button.Text = button.Name
     button.Button.Size = UDim2.new(1, 0, 1, 0)
-    button.Button.BackgroundColor3 = VoidUI.Colors.Dark
+    button.Button.BackgroundColor3 = VoidUI.Colors.Secondary
     button.Button.BackgroundTransparency = 0.2
     button.Button.TextColor3 = VoidUI.Colors.Text
     button.Button.Font = Enum.Font.Gotham
@@ -345,21 +343,21 @@ function VoidUI:CreateButton(section, options)
     button.Button.AutoButtonColor = false
     button.Button.Parent = button.Frame
     
-    createCorner(8).Parent = button.Button
-    createStroke(2, VoidUI.Colors.Accent, 0.3).Parent = button.Button
+    createCorner(6).Parent = button.Button
+    createStroke(1, VoidUI.Colors.Accent, 0.5).Parent = button.Button
     
     -- Hover effects
     button.Button.MouseEnter:Connect(function()
         TweenService:Create(button.Button, tweenInfo, {
             BackgroundTransparency = 0,
-            Size = UDim2.new(1, 5, 1, 5)
+            BackgroundColor3 = VoidUI.Colors.Accent
         }):Play()
     end)
     
     button.Button.MouseLeave:Connect(function()
         TweenService:Create(button.Button, tweenInfo, {
             BackgroundTransparency = 0.2,
-            Size = UDim2.new(1, 0, 1, 0)
+            BackgroundColor3 = VoidUI.Colors.Secondary
         }):Play()
     end)
     
@@ -367,14 +365,14 @@ function VoidUI:CreateButton(section, options)
     button.Button.MouseButton1Click:Connect(function()
         -- Click animation
         TweenService:Create(button.Button, TweenInfo.new(0.1), {
-            BackgroundColor3 = VoidUI.Colors.Accent,
-            Size = UDim2.new(1, -5, 1, -5)
+            BackgroundColor3 = VoidUI.Colors.Success,
+            Size = UDim2.new(1, -4, 1, -4)
         }):Play()
         
         task.wait(0.1)
         
         TweenService:Create(button.Button, TweenInfo.new(0.1), {
-            BackgroundColor3 = VoidUI.Colors.Dark,
+            BackgroundColor3 = VoidUI.Colors.Secondary,
             Size = UDim2.new(1, 0, 1, 0)
         }):Play()
         
@@ -384,7 +382,7 @@ function VoidUI:CreateButton(section, options)
     return button
 end
 
--- Toggle Creation
+-- Toggle Creation (Fixed)
 function VoidUI:CreateToggle(section, options)
     options = options or {}
     local toggle = {}
@@ -396,7 +394,7 @@ function VoidUI:CreateToggle(section, options)
     toggle.Frame = Instance.new("Frame")
     toggle.Frame.Size = UDim2.new(1, 0, 0, 30)
     toggle.Frame.BackgroundTransparency = 1
-    toggle.Frame.LayoutOrder = #section.Content:GetChildren() + 1
+    toggle.Frame.LayoutOrder = #section.Content:GetChildren()
     toggle.Frame.Parent = section.Content
     
     toggle.Label = Instance.new("TextLabel")
@@ -409,23 +407,28 @@ function VoidUI:CreateToggle(section, options)
     toggle.Label.TextXAlignment = Enum.TextXAlignment.Left
     toggle.Label.Parent = toggle.Frame
     
-    toggle.Button = Instance.new("TextButton")
-    toggle.Button.Size = UDim2.new(0, 50, 0, 25)
-    toggle.Button.Position = UDim2.new(1, -55, 0, 2)
-    toggle.Button.BackgroundColor3 = VoidUI.Colors.Dark
-    toggle.Button.BackgroundTransparency = 0.2
-    toggle.Button.Text = ""
-    toggle.Button.AutoButtonColor = false
-    toggle.Button.Parent = toggle.Frame
+    toggle.ToggleFrame = Instance.new("Frame")
+    toggle.ToggleFrame.Size = UDim2.new(0, 50, 0, 25)
+    toggle.ToggleFrame.Position = UDim2.new(1, -55, 0, 2)
+    toggle.ToggleFrame.BackgroundColor3 = VoidUI.Colors.Secondary
+    toggle.ToggleFrame.BackgroundTransparency = 0.3
+    toggle.ToggleFrame.Parent = toggle.Frame
     
-    createCorner(12).Parent = toggle.Button
-    createStroke(2, VoidUI.Colors.Accent, 0.3).Parent = toggle.Button
+    createCorner(12).Parent = toggle.ToggleFrame
+    createStroke(1, VoidUI.Colors.Accent, 0.5).Parent = toggle.ToggleFrame
+    
+    toggle.ToggleButton = Instance.new("TextButton")
+    toggle.ToggleButton.Size = UDim2.new(1, 0, 1, 0)
+    toggle.ToggleButton.BackgroundTransparency = 1
+    toggle.ToggleButton.Text = ""
+    toggle.ToggleButton.ZIndex = 2
+    toggle.ToggleButton.Parent = toggle.ToggleFrame
     
     toggle.Slider = Instance.new("Frame")
-    toggle.Slider.Size = UDim2.new(0, 20, 0, 20)
-    toggle.Slider.Position = UDim2.new(0, 3, 0, 2)
+    toggle.Slider.Size = UDim2.new(0, 21, 0, 21)
+    toggle.Slider.Position = UDim2.new(0, 2, 0, 2)
     toggle.Slider.BackgroundColor3 = VoidUI.Colors.Accent
-    toggle.Slider.Parent = toggle.Button
+    toggle.Slider.Parent = toggle.ToggleFrame
     
     createCorner(10).Parent = toggle.Slider
     
@@ -433,7 +436,7 @@ function VoidUI:CreateToggle(section, options)
     toggle:SetValue(toggle.Default)
     
     -- Toggle functionality
-    toggle.Button.MouseButton1Click:Connect(function()
+    toggle.ToggleButton.MouseButton1Click:Connect(function()
         toggle:SetValue(not toggle.Value)
         toggle.Callback(toggle.Value)
     end)
@@ -445,16 +448,18 @@ function VoidUI:CreateToggle(section, options)
                 Position = UDim2.new(1, -23, 0, 2),
                 BackgroundColor3 = VoidUI.Colors.Success
             }):Play()
-            TweenService:Create(self.Button, tweenInfo, {
-                BackgroundColor3 = VoidUI.Colors.Success
+            TweenService:Create(self.ToggleFrame, tweenInfo, {
+                BackgroundColor3 = VoidUI.Colors.Success,
+                BackgroundTransparency = 0.2
             }):Play()
         else
             TweenService:Create(self.Slider, tweenInfo, {
-                Position = UDim2.new(0, 3, 0, 2),
+                Position = UDim2.new(0, 2, 0, 2),
                 BackgroundColor3 = VoidUI.Colors.Accent
             }):Play()
-            TweenService:Create(self.Button, tweenInfo, {
-                BackgroundColor3 = VoidUI.Colors.Dark
+            TweenService:Create(self.ToggleFrame, tweenInfo, {
+                BackgroundColor3 = VoidUI.Colors.Secondary,
+                BackgroundTransparency = 0.3
             }):Play()
         end
     end
@@ -476,61 +481,67 @@ function VoidUI:CreateSlider(section, options)
     slider.Default = options.Default or slider.Min
     slider.Callback = options.Callback or function() end
     slider.Value = slider.Default
+    slider.Precision = options.Precision or 0
     
     slider.Frame = Instance.new("Frame")
     slider.Frame.Size = UDim2.new(1, 0, 0, 60)
     slider.Frame.BackgroundTransparency = 1
-    slider.Frame.LayoutOrder = #section.Content:GetChildren() + 1
+    slider.Frame.LayoutOrder = #section.Content:GetChildren()
     slider.Frame.Parent = section.Content
+    
+    slider.Header = Instance.new("Frame")
+    slider.Header.Size = UDim2.new(1, 0, 0, 20)
+    slider.Header.BackgroundTransparency = 1
+    slider.Header.Parent = slider.Frame
     
     slider.Label = Instance.new("TextLabel")
     slider.Label.Text = slider.Name
-    slider.Label.Size = UDim2.new(1, 0, 0, 20)
+    slider.Label.Size = UDim2.new(0.7, 0, 1, 0)
     slider.Label.BackgroundTransparency = 1
     slider.Label.TextColor3 = VoidUI.Colors.Text
     slider.Label.Font = Enum.Font.Gotham
     slider.Label.TextSize = 14
     slider.Label.TextXAlignment = Enum.TextXAlignment.Left
-    slider.Label.Parent = slider.Frame
+    slider.Label.Parent = slider.Header
     
     slider.ValueLabel = Instance.new("TextLabel")
     slider.ValueLabel.Text = tostring(slider.Value)
-    slider.ValueLabel.Size = UDim2.new(0, 50, 0, 20)
-    slider.ValueLabel.Position = UDim2.new(1, -50, 0, 0)
+    slider.ValueLabel.Size = UDim2.new(0.3, 0, 1, 0)
+    slider.ValueLabel.Position = UDim2.new(0.7, 0, 0, 0)
     slider.ValueLabel.BackgroundTransparency = 1
-    slider.ValueLabel.TextColor3 = VoidUI.Colors.Text
+    slider.ValueLabel.TextColor3 = VoidUI.Colors.SubText
     slider.ValueLabel.Font = Enum.Font.Gotham
     slider.ValueLabel.TextSize = 14
     slider.ValueLabel.TextXAlignment = Enum.TextXAlignment.Right
-    slider.ValueLabel.Parent = slider.Frame
+    slider.ValueLabel.Parent = slider.Header
     
     slider.Track = Instance.new("Frame")
-    slider.Track.Size = UDim2.new(1, 0, 0, 10)
+    slider.Track.Size = UDim2.new(1, 0, 0, 6)
     slider.Track.Position = UDim2.new(0, 0, 0, 35)
-    slider.Track.BackgroundColor3 = VoidUI.Colors.Dark
+    slider.Track.BackgroundColor3 = VoidUI.Colors.Secondary
     slider.Track.BackgroundTransparency = 0.3
     slider.Track.Parent = slider.Frame
     
-    createCorner(5).Parent = slider.Track
-    createStroke(2, VoidUI.Colors.Accent, 0.3).Parent = slider.Track
+    createCorner(3).Parent = slider.Track
     
     slider.Fill = Instance.new("Frame")
     slider.Fill.Size = UDim2.new(0, 0, 1, 0)
     slider.Fill.BackgroundColor3 = VoidUI.Colors.Accent
     slider.Fill.Parent = slider.Track
     
-    createCorner(5).Parent = slider.Fill
+    createCorner(3).Parent = slider.Fill
     
     slider.Button = Instance.new("TextButton")
-    slider.Button.Size = UDim2.new(0, 20, 0, 20)
-    slider.Button.Position = UDim2.new(0, -10, 0, -5)
+    slider.Button.Size = UDim2.new(0, 16, 0, 16)
+    slider.Button.Position = UDim2.new(0, -8, 0, -5)
     slider.Button.BackgroundColor3 = VoidUI.Colors.Text
     slider.Button.Text = ""
     slider.Button.AutoButtonColor = false
+    slider.Button.ZIndex = 2
     slider.Button.Parent = slider.Track
     
-    createCorner(10).Parent = slider.Button
-    createStroke(2, VoidUI.Colors.Accent).Parent = slider.Button
+    createCorner(8).Parent = slider.Button
+    createStroke(1, VoidUI.Colors.Accent).Parent = slider.Button
     
     -- Set initial value
     slider:SetValue(slider.Default)
@@ -540,7 +551,8 @@ function VoidUI:CreateSlider(section, options)
     
     local function updateSlider(input)
         local relativeX = (input.Position.X - slider.Track.AbsolutePosition.X) / slider.Track.AbsoluteSize.X
-        local value = math.floor(slider.Min + (slider.Max - slider.Min) * math.clamp(relativeX, 0, 1))
+        local rawValue = slider.Min + (slider.Max - slider.Min) * math.clamp(relativeX, 0, 1)
+        local value = slider.Precision > 0 and math.floor(rawValue / slider.Precision) * slider.Precision or math.floor(rawValue)
         slider:SetValue(value)
         slider.Callback(value)
     end
@@ -575,7 +587,7 @@ function VoidUI:CreateSlider(section, options)
         
         local percentage = (self.Value - self.Min) / (self.Max - self.Min)
         self.Fill.Size = UDim2.new(percentage, 0, 1, 0)
-        self.Button.Position = UDim2.new(percentage, -10, 0, -5)
+        self.Button.Position = UDim2.new(percentage, -8, 0, -5)
     end
     
     function slider:GetValue()
@@ -590,51 +602,52 @@ function VoidUI:CreateDropdown(section, options)
     options = options or {}
     local dropdown = {}
     dropdown.Name = options.Name or "Dropdown"
-    dropdown.Options = options.Options or {}
+    dropdown.Options = options.Options or {"Option 1", "Option 2", "Option 3"}
     dropdown.Default = options.Default or dropdown.Options[1]
     dropdown.Callback = options.Callback or function() end
     dropdown.Value = dropdown.Default
     dropdown.Open = false
     
     dropdown.Frame = Instance.new("Frame")
-    dropdown.Frame.Size = UDim2.new(1, 0, 0, 40)
+    dropdown.Frame.Size = UDim2.new(1, 0, 0, 35)
     dropdown.Frame.BackgroundTransparency = 1
-    dropdown.Frame.LayoutOrder = #section.Content:GetChildren() + 1
+    dropdown.Frame.LayoutOrder = #section.Content:GetChildren()
     dropdown.Frame.ClipsDescendants = true
     dropdown.Frame.Parent = section.Content
     
     dropdown.Button = Instance.new("TextButton")
-    dropdown.Button.Size = UDim2.new(1, 0, 0, 40)
-    dropdown.Button.BackgroundColor3 = VoidUI.Colors.Dark
+    dropdown.Button.Size = UDim2.new(1, 0, 0, 35)
+    dropdown.Button.BackgroundColor3 = VoidUI.Colors.Secondary
     dropdown.Button.BackgroundTransparency = 0.2
     dropdown.Button.Text = dropdown.Name .. ": " .. tostring(dropdown.Value)
     dropdown.Button.TextColor3 = VoidUI.Colors.Text
     dropdown.Button.Font = Enum.Font.Gotham
     dropdown.Button.TextSize = 14
+    dropdown.Button.TextXAlignment = Enum.TextXAlignment.Left
     dropdown.Button.AutoButtonColor = false
     dropdown.Button.Parent = dropdown.Frame
     
-    createCorner(8).Parent = dropdown.Button
-    createStroke(2, VoidUI.Colors.Accent, 0.3).Parent = dropdown.Button
+    createCorner(6).Parent = dropdown.Button
+    createStroke(1, VoidUI.Colors.Accent, 0.5).Parent = dropdown.Button
     
     dropdown.Arrow = Instance.new("ImageLabel")
-    dropdown.Arrow.Size = UDim2.new(0, 20, 0, 20)
-    dropdown.Arrow.Position = UDim2.new(1, -25, 0, 10)
+    dropdown.Arrow.Size = UDim2.new(0, 16, 0, 16)
+    dropdown.Arrow.Position = UDim2.new(1, -25, 0, 9)
     dropdown.Arrow.BackgroundTransparency = 1
-    dropdown.Arrow.Image = "rbxassetid://6031090990" -- Down arrow icon
-    dropdown.Arrow.ImageColor3 = VoidUI.Colors.Text
+    dropdown.Arrow.Image = "rbxassetid://6031090990"
+    dropdown.Arrow.ImageColor3 = VoidUI.Colors.SubText
     dropdown.Arrow.Parent = dropdown.Button
     
     dropdown.OptionsFrame = Instance.new("Frame")
     dropdown.OptionsFrame.Size = UDim2.new(1, 0, 0, 0)
     dropdown.OptionsFrame.Position = UDim2.new(0, 0, 1, 5)
-    dropdown.OptionsFrame.BackgroundColor3 = VoidUI.Colors.Dark
+    dropdown.OptionsFrame.BackgroundColor3 = VoidUI.Colors.Secondary
     dropdown.OptionsFrame.BackgroundTransparency = 0.1
     dropdown.OptionsFrame.Visible = false
     dropdown.OptionsFrame.Parent = dropdown.Frame
     
-    createCorner(8).Parent = dropdown.OptionsFrame
-    createStroke(2, VoidUI.Colors.Accent, 0.3).Parent = dropdown.OptionsFrame
+    createCorner(6).Parent = dropdown.OptionsFrame
+    createStroke(1, VoidUI.Colors.Accent, 0.5).Parent = dropdown.OptionsFrame
     
     local optionsList = Instance.new("UIListLayout")
     optionsList.FillDirection = Enum.FillDirection.Vertical
@@ -645,7 +658,7 @@ function VoidUI:CreateDropdown(section, options)
     for i, option in pairs(dropdown.Options) do
         local optionButton = Instance.new("TextButton")
         optionButton.Size = UDim2.new(1, 0, 0, 30)
-        optionButton.BackgroundColor3 = VoidUI.Colors.Dark
+        optionButton.BackgroundColor3 = VoidUI.Colors.Secondary
         optionButton.BackgroundTransparency = 0.3
         optionButton.Text = tostring(option)
         optionButton.TextColor3 = VoidUI.Colors.Text
@@ -655,7 +668,7 @@ function VoidUI:CreateDropdown(section, options)
         optionButton.LayoutOrder = i
         optionButton.Parent = dropdown.OptionsFrame
         
-        createCorner(5).Parent = optionButton
+        createCorner(4).Parent = optionButton
         
         optionButton.MouseButton1Click:Connect(function()
             dropdown:SetValue(option)
@@ -664,13 +677,15 @@ function VoidUI:CreateDropdown(section, options)
         
         optionButton.MouseEnter:Connect(function()
             TweenService:Create(optionButton, tweenInfo, {
-                BackgroundTransparency = 0.1
+                BackgroundTransparency = 0.1,
+                BackgroundColor3 = VoidUI.Colors.Accent
             }):Play()
         end)
         
         optionButton.MouseLeave:Connect(function()
             TweenService:Create(optionButton, tweenInfo, {
-                BackgroundTransparency = 0.3
+                BackgroundTransparency = 0.3,
+                BackgroundColor3 = VoidUI.Colors.Secondary
             }):Play()
         end)
     end
@@ -691,13 +706,13 @@ function VoidUI:CreateDropdown(section, options)
             self.OptionsFrame.Visible = true
             TweenService:Create(self.Arrow, tweenInfo, {Rotation = 180}):Play()
             TweenService:Create(self.Frame, tweenInfo, {
-                Size = UDim2.new(1, 0, 0, 40 + self.OptionsFrame.Size.Y.Offset + 5)
+                Size = UDim2.new(1, 0, 0, 35 + self.OptionsFrame.Size.Y.Offset + 5)
             }):Play()
         else
             self.OptionsFrame.Visible = false
             TweenService:Create(self.Arrow, tweenInfo, {Rotation = 0}):Play()
             TweenService:Create(self.Frame, tweenInfo, {
-                Size = UDim2.new(1, 0, 0, 40)
+                Size = UDim2.new(1, 0, 0, 35)
             }):Play()
         end
     end
@@ -726,9 +741,9 @@ function VoidUI:CreateTextbox(section, options)
     textbox.Callback = options.Callback or function() end
     
     textbox.Frame = Instance.new("Frame")
-    textbox.Frame.Size = UDim2.new(1, 0, 0, 40)
+    textbox.Frame.Size = UDim2.new(1, 0, 0, 35)
     textbox.Frame.BackgroundTransparency = 1
-    textbox.Frame.LayoutOrder = #section.Content:GetChildren() + 1
+    textbox.Frame.LayoutOrder = #section.Content:GetChildren()
     textbox.Frame.Parent = section.Content
     
     textbox.Label = Instance.new("TextLabel")
@@ -744,30 +759,30 @@ function VoidUI:CreateTextbox(section, options)
     textbox.Box = Instance.new("TextBox")
     textbox.Box.Size = UDim2.new(0.7, 0, 1, 0)
     textbox.Box.Position = UDim2.new(0.3, 0, 0, 0)
-    textbox.Box.BackgroundColor3 = VoidUI.Colors.Dark
+    textbox.Box.BackgroundColor3 = VoidUI.Colors.Secondary
     textbox.Box.BackgroundTransparency = 0.2
     textbox.Box.TextColor3 = VoidUI.Colors.Text
     textbox.Box.PlaceholderText = textbox.Placeholder
-    textbox.Box.PlaceholderColor3 = Color3.fromRGB(200, 200, 200)
+    textbox.Box.PlaceholderColor3 = VoidUI.Colors.SubText
     textbox.Box.Font = Enum.Font.Gotham
     textbox.Box.TextSize = 14
     textbox.Box.TextXAlignment = Enum.TextXAlignment.Left
     textbox.Box.Parent = textbox.Frame
     
-    createCorner(8).Parent = textbox.Box
-    createStroke(2, VoidUI.Colors.Accent, 0.3).Parent = textbox.Box
+    createCorner(6).Parent = textbox.Box
+    createStroke(1, VoidUI.Colors.Accent, 0.5).Parent = textbox.Box
     
     textbox.Box.Focused:Connect(function()
         TweenService:Create(textbox.Box, tweenInfo, {
             BackgroundTransparency = 0,
-            Size = UDim2.new(0.7, 5, 1, 5)
+            BackgroundColor3 = VoidUI.Colors.Accent
         }):Play()
     end)
     
-    textbox.Box.FocusLost:Connect(function()
+    textbox.Box.FocusLost:Connect(function(enterPressed)
         TweenService:Create(textbox.Box, tweenInfo, {
             BackgroundTransparency = 0.2,
-            Size = UDim2.new(0.7, 0, 1, 0)
+            BackgroundColor3 = VoidUI.Colors.Secondary
         }):Play()
         textbox.Callback(textbox.Box.Text)
     end)
@@ -784,22 +799,22 @@ function VoidUI:CreateTextbox(section, options)
 end
 
 -- Label Creation
-function VoidUI:CreateLabel(section, text)
+function VoidUI:CreateLabel(section, text, isTitle)
     local label = {}
     
     label.Frame = Instance.new("Frame")
-    label.Frame.Size = UDim2.new(1, 0, 0, 25)
+    label.Frame.Size = UDim2.new(1, 0, 0, isTitle and 30 or 20)
     label.Frame.BackgroundTransparency = 1
-    label.Frame.LayoutOrder = #section.Content:GetChildren() + 1
+    label.Frame.LayoutOrder = #section.Content:GetChildren()
     label.Frame.Parent = section.Content
     
     label.TextLabel = Instance.new("TextLabel")
     label.TextLabel.Text = text
     label.TextLabel.Size = UDim2.new(1, 0, 1, 0)
     label.TextLabel.BackgroundTransparency = 1
-    label.TextLabel.TextColor3 = VoidUI.Colors.Text
-    label.TextLabel.Font = Enum.Font.Gotham
-    label.TextLabel.TextSize = 14
+    label.TextLabel.TextColor3 = isTitle and VoidUI.Colors.Text or VoidUI.Colors.SubText
+    label.TextLabel.Font = isTitle and Enum.Font.GothamBold or Enum.Font.Gotham
+    label.TextLabel.TextSize = isTitle and 16 or 14
     label.TextLabel.TextXAlignment = Enum.TextXAlignment.Left
     label.TextLabel.Parent = label.Frame
     
