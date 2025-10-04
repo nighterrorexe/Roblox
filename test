@@ -2,7 +2,7 @@
 local VoidHub = {}
 
 local ValidKeys = {
-    "12"
+    "123"
 }
 
 local BypassKey = false
@@ -300,79 +300,10 @@ function VoidHub:CreateWindow()
         Errortxt.TextTransparency = 0
     end
 
-    -- Function to create stylish buttons
-    local function createButton(name, text, position, callback)
-        local button = Instance.new("TextButton")
-        button.Name = name
-        button.Text = text
-        button.Size = UDim2.new(0, 140, 0, 45)
-        button.Position = position
-        button.BackgroundColor3 = Color3.fromRGB(75, 0, 130)
-        button.BackgroundTransparency = 0.1
-        button.Font = Enum.Font.GothamBold
-        button.TextColor3 = Color3.fromRGB(255, 255, 255)
-        button.TextSize = 16
-        button.AutoButtonColor = false
-        button.Parent = Main
-
-        local buttonCorner = Instance.new("UICorner")
-        buttonCorner.CornerRadius = UDim.new(0, 15)
-        buttonCorner.Parent = button
-
-        local buttonStroke = Instance.new("UIStroke")
-        buttonStroke.Thickness = 2
-        buttonStroke.Color = Color3.fromRGB(255, 105, 180)
-        buttonStroke.Transparency = 0.2
-        buttonStroke.Parent = button
-
-        local buttonGradient = Instance.new("UIGradient")
-        buttonGradient.Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(147, 112, 219)),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(138, 43, 226))
-        })
-        buttonGradient.Parent = button
-
-        -- Hover effects
-        button.MouseEnter:Connect(function()
-            TweenService:Create(button, tweenInfo, {
-                BackgroundTransparency = 0,
-                Size = UDim2.new(0, 145, 0, 48)
-            }):Play()
-            TweenService:Create(buttonStroke, tweenInfo, {Transparency = 0}):Play()
-        end)
-
-        button.MouseLeave:Connect(function()
-            TweenService:Create(button, tweenInfo, {
-                BackgroundTransparency = 0.1,
-                Size = UDim2.new(0, 140, 0, 45)
-            }):Play()
-            TweenService:Create(buttonStroke, tweenInfo, {Transparency = 0.2}):Play()
-        end)
-
-        -- Click animation
-        button.MouseButton1Click:Connect(function()
-            TweenService:Create(button, TweenInfo.new(0.1), {
-                BackgroundColor3 = Color3.fromRGB(255, 105, 180),
-                Size = UDim2.new(0, 135, 0, 43)
-            }):Play()
-            
-            task.wait(0.1)
-            
-            TweenService:Create(button, TweenInfo.new(0.1), {
-                BackgroundColor3 = Color3.fromRGB(75, 0, 130),
-                Size = UDim2.new(0, 140, 0, 45)
-            }):Play()
-            
-            callback()
-        end)
-
-        return button
-    end
-
     -- Close button with special styling
     local closebtn = Instance.new("TextButton")
     closebtn.Name = "Close"
-    closebtn.Text = "×"
+    closebtn.Text = "X"
     closebtn.TextScaled = true
     closebtn.TextColor3 = Color3.fromRGB(255, 255, 255)
     closebtn.Font = Enum.Font.GothamBlack
@@ -385,6 +316,21 @@ function VoidHub:CreateWindow()
     local closeCorner = Instance.new("UICorner")
     closeCorner.CornerRadius = UDim.new(1, 0)
     closeCorner.Parent = closebtn
+
+    -- Close button hover effects
+    closebtn.MouseEnter:Connect(function()
+        TweenService:Create(closebtn, tweenInfo, {
+            BackgroundColor3 = Color3.fromRGB(255, 69, 58),
+            Size = UDim2.new(0, 40, 0, 40)
+        }):Play()
+    end)
+
+    closebtn.MouseLeave:Connect(function()
+        TweenService:Create(closebtn, tweenInfo, {
+            BackgroundColor3 = Color3.fromRGB(220, 20, 60),
+            Size = UDim2.new(0, 35, 0, 35)
+        }):Play()
+    end)
 
     closebtn.MouseButton1Click:Connect(function()
         -- Close animation
@@ -403,8 +349,108 @@ function VoidHub:CreateWindow()
         blur:Destroy()
     end)
 
-    -- Create action buttons
-    local Getbtn = createButton("Get", "GET KEY", UDim2.new(0.5, -150, 0, 200), function()
+    -- Get Key Button
+    local Getbtn = Instance.new("TextButton")
+    Getbtn.Name = "Get"
+    Getbtn.Text = "GET KEY"
+    Getbtn.Size = UDim2.new(0, 140, 0, 45)
+    Getbtn.Position = UDim2.new(0.5, -150, 0, 200)
+    Getbtn.BackgroundColor3 = Color3.fromRGB(75, 0, 130)
+    Getbtn.BackgroundTransparency = 0.1
+    Getbtn.Font = Enum.Font.GothamBold
+    Getbtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Getbtn.TextSize = 16
+    Getbtn.AutoButtonColor = false
+    Getbtn.Parent = Main
+
+    local getCorner = Instance.new("UICorner")
+    getCorner.CornerRadius = UDim.new(0, 15)
+    getCorner.Parent = Getbtn
+
+    local getStroke = Instance.new("UIStroke")
+    getStroke.Thickness = 2
+    getStroke.Color = Color3.fromRGB(255, 105, 180)
+    getStroke.Transparency = 0.2
+    getStroke.Parent = Getbtn
+
+    local getGradient = Instance.new("UIGradient")
+    getGradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(147, 112, 219)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(138, 43, 226))
+    })
+    getGradient.Parent = Getbtn
+
+    -- Check Key Button
+    local Checkbtn = Instance.new("TextButton")
+    Checkbtn.Name = "Check"
+    Checkbtn.Text = "CHECK KEY"
+    Checkbtn.Size = UDim2.new(0, 140, 0, 45)
+    Checkbtn.Position = UDim2.new(0.5, 10, 0, 200)
+    Checkbtn.BackgroundColor3 = Color3.fromRGB(75, 0, 130)
+    Checkbtn.BackgroundTransparency = 0.1
+    Checkbtn.Font = Enum.Font.GothamBold
+    Checkbtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Checkbtn.TextSize = 16
+    Checkbtn.AutoButtonColor = false
+    Checkbtn.Parent = Main
+
+    local checkCorner = Instance.new("UICorner")
+    checkCorner.CornerRadius = UDim.new(0, 15)
+    checkCorner.Parent = Checkbtn
+
+    local checkStroke = Instance.new("UIStroke")
+    checkStroke.Thickness = 2
+    checkStroke.Color = Color3.fromRGB(255, 105, 180)
+    checkStroke.Transparency = 0.2
+    checkStroke.Parent = Checkbtn
+
+    local checkGradient = Instance.new("UIGradient")
+    checkGradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(147, 112, 219)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(138, 43, 226))
+    })
+    checkGradient.Parent = Checkbtn
+
+    -- Button hover effects function
+    local function setupButtonHoverEffects(button)
+        button.MouseEnter:Connect(function()
+            TweenService:Create(button, tweenInfo, {
+                BackgroundTransparency = 0,
+                Size = UDim2.new(0, 145, 0, 48)
+            }):Play()
+            TweenService:Create(button.Stroke, tweenInfo, {Transparency = 0}):Play()
+        end)
+
+        button.MouseLeave:Connect(function()
+            TweenService:Create(button, tweenInfo, {
+                BackgroundTransparency = 0.1,
+                Size = UDim2.new(0, 140, 0, 45)
+            }):Play()
+            TweenService:Create(button.Stroke, tweenInfo, {Transparency = 0.2}):Play()
+        end)
+
+        -- Click animation
+        button.MouseButton1Click:Connect(function()
+            TweenService:Create(button, TweenInfo.new(0.1), {
+                BackgroundColor3 = Color3.fromRGB(255, 105, 180),
+                Size = UDim2.new(0, 135, 0, 43)
+            }):Play()
+            
+            task.wait(0.1)
+            
+            TweenService:Create(button, TweenInfo.new(0.1), {
+                BackgroundColor3 = Color3.fromRGB(75, 0, 130),
+                Size = UDim2.new(0, 140, 0, 45)
+            }):Play()
+        end)
+    end
+
+    -- Apply hover effects to buttons
+    setupButtonHoverEffects(Getbtn)
+    setupButtonHoverEffects(Checkbtn)
+
+    -- Get Key button functionality
+    Getbtn.MouseButton1Click:Connect(function()
         local link = "https://workink.net/23KW/olr2h0y6"
         pcall(function()
             setclipboard(link)
@@ -412,7 +458,8 @@ function VoidHub:CreateWindow()
         ShowError("✅ Link copied to clipboard!", Color3.fromRGB(0, 255, 127))
     end)
 
-    local Checkbtn = createButton("Check", "CHECK KEY", UDim2.new(0.5, 10, 0, 200), function()
+    -- Check Key button functionality
+    Checkbtn.MouseButton1Click:Connect(function()
         local key = EnterKey.Text
         
         -- Show loading animation
